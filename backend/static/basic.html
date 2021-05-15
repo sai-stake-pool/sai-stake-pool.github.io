@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>d3-ez : Line Chart Example</title>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://raw.githack.com/jamesleesaunders/d3-ez/master/dist/d3-ez.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://rawgit.com/jamesleesaunders/d3.ez/master/dist/d3-ez.css" />
+</head>
+
+<body>
+  <div id="chartholder"></div>
+
+  <script type="text/javascript">
+    var myChart;
+    d3.json("candlestick_data.json").then(function(data) {
+
+      var chart = d3.ez.chart.candlestickChart();
+      var legend = d3.ez.component.legend().title("Cryptocoin Price");
+      var title = d3.ez.component.title().mainText("Cryptocoin Price").subText("Cryptocoin Price");
+
+      // Create chart base
+      myChart = d3.ez.base()
+        .width(750)
+        .height(400)
+        .chart(chart)
+        .legend(legend)
+        .title(title)
+        .on("customValueMouseOver", function(d) {
+          d3.select("#message").text(d.value);
+        })
+        .on("customSeriesClick", function(d) {
+          console.log(d);
+        });
+
+      d3.select('#chartholder')
+        .datum(data)
+        .call(myChart);
+
+    });
+  </script>
+</body>
+
+</html>

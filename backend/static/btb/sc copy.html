@@ -1,0 +1,287 @@
+<!doctype html>
+<html>
+
+<head>
+    <style>
+        .bar {
+            fill: steelblue;
+        }
+
+        .highlight {
+            fill: orange;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/lodash@4.17.10/lodash.min.js"></script>
+    <script src="/btb/pnzoom/panzoom.js"></script>
+</head>
+
+<body>
+    <svg width="1024" height="500"></svg>
+    <script>
+
+        var svg = d3.select("svg"),
+            margin = 200,
+            width = svg.attr("width") - margin,
+            height = svg.attr("height") - margin;
+
+        svg.append("text")
+            .attr("transform", "translate(100,0)")
+            .attr("x", 50)
+            .attr("y", 50)
+            .attr("font-size", "12px")
+            .text("ctb")
+
+        var xScale2;
+
+        // var x = d3.time.range([0, width]).padding(0.4), y = d3.scaleLinear().range([height, 0]);
+
+
+        // d3.csv("xyz2.csv?id=asdf", function (error, data) {
+        d3.csv("http://localhost:5000/api/v1/resources/ticker", function (error, data) {
+            if (error) {
+                throw error;
+            }
+            var dateFormat = d3.timeParse("%Y-%m-%d %H:%M:%S");
+            console.log(dateFormat)
+
+            for (var i = 0; i < data.length; i++) {
+
+                data[i]['Date'] = dateFormat(data[i]['Date'])
+            }
+
+            console.log(data);
+            dateMinArray = d3.min(data.map(r => r.Date))
+            dateMaxArray = d3.max(data.map(r => r.Date))
+
+            let dates = _.map(data, 'Date');
+            console.log(dates)
+
+            var xScale = d3.scaleLinear().domain([0, dates.length - 1])
+                .range([0, width])
+
+
+            xScale2 = d3.scaleTime()
+                .domain([dateMinArray, dateMaxArray])
+                .range([0, width])
+
+            var g = svg.append("g")
+                .attr("class", "axis x-axis")
+                .attr("transform", "translate(" + 100 + "," + 450 + ")")
+                .call(d3.axisBottom(xScale2))
+
+            // g.append("g")
+            //  .attr("transform", "translate(0," + height + ")")
+            //  .call(d3.axisBottom(x))            
+
+
+            var ymin = d3.min(data.map(r => r.Low * .995));
+            var ymax = d3.max(data.map(r => (r.High * 1.005)));
+
+            yScale = d3.scaleLinear().domain([ymin, ymax]).range([height + 120, 0]).nice();
+
+            console.log(ymin)
+            console.log(ymax)
+
+            var yAxis = d3.axisLeft()
+                .scale(yScale)
+
+            gY = svg.append("g")
+                .attr("class", "axis y-axis")
+                .attr("transform", "translate(" + 80 + "," + (15) + ")")
+                .call(yAxis);
+
+
+            var chartBody = svg.append("g")
+                .attr("class", "chartBody")
+                .attr("transform", "translate(" + 100 + "," + 0 + ")")
+                .attr("clip-path", "url(#clip)");
+
+            // draw high and low
+            let stems = chartBody.selectAll(".line")
+                .data(data)
+                .enter()
+                .append("line")
+                .attr("class", "stem")
+                .attr("x1", (d, i) => xScale2(d.Date))
+                .attr("x2", (d, i) => xScale2(d.Date))
+                .attr("y1", d => yScale(d.High) + 15)
+                .attr("y2", d => yScale(d.Low) + 15)
+                .attr("stroke-width", ".5")
+                .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+
+
+                
+
+            let candles = chartBody.selectAll(".candle")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+                .attr("stroke-width", ".25")
+                .attr('x', (d, i) => xScale2(d.Date) - 2)
+                .attr("class", "candle")
+                .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
+                .attr('width', "5")
+                .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+                .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+                .on("mouseover", handleMouseOver)
+                .on("mouseout", handleMouseOut);
+
+
+
+        });
+
+        function handleMouseOver(d, i) {  // Add interactivity
+
+            // Use D3 to select element, change color and size
+            d3.select(this).attr({
+                fill: "orange"
+            });
+            console.log(d);
+
+            // Specify where to put label of text
+            // svg.append("text").attr({
+            //     id: "t" + d.x + "-" + d.y + "-" + i,  // Create an id for text so we can select it later for removing on mouseout
+            //     x: function () { return xScale(d.x) - 30; },
+            //     y: function () { return yScale(d.y) - 15; }
+            // })
+            //     .text(function () {
+            //         return [d.x, d.y];  // Value of the text
+            //     });
+        }
+
+        function handleMouseOut(d, i) {
+            // Use D3 to select element, change color back to normal
+            d3.select(this)
+                .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+
+
+            // Select text by id and then remove
+            d3.select("#t" + d.x + "-" + d.y + "-" + i).remove();  // Remove text location
+        }
+
+        function getData(cb) {
+            d3.csv("http://localhost:5000/api/v1/resources/ticker", function (error, data) {
+                if (error) {
+                    throw error;
+                }
+                var dateFormat = d3.timeParse("%Y-%m-%d %H:%M:%S");
+                console.log(dateFormat)
+
+                for (var i = 0; i < data.length; i++) {
+
+                    data[i]['Date'] = dateFormat(data[i]['Date'])
+                }
+
+                cb(data);
+            });
+        }
+
+        function update(data) {
+            console.log(data);
+            dateMinArray = d3.min(data.map(r => r.Date))
+            dateMaxArray = d3.max(data.map(r => r.Date))
+
+            let dates = _.map(data, 'Date');
+            console.log(dates)
+
+
+            var svg = d3.select("svg").transition();
+
+
+            xScale2 = d3.scaleTime()
+                .domain([dateMinArray, dateMaxArray])
+                .range([0, width])
+
+            var g = svg.select(".x-axis")
+                // .attr("transform", "translate(" + 100 + "," + 450 + ")")
+                .duration(500)
+                .call(d3.axisBottom(xScale2))
+
+            var ymin = d3.min(data.map(r => r.Low * .995));
+            var ymax = d3.max(data.map(r => (r.High * 1.005)));
+
+            yScale = d3.scaleLinear().domain([ymin, ymax]).range([height + 120, 0]).nice();
+
+            console.log(ymin)
+            console.log(ymax)
+
+            var yAxis = d3.axisLeft()
+                .scale(yScale)
+
+            gY = svg.select(".y-axis")
+                .duration(500)
+                .call(yAxis);
+
+
+            var chartBody = d3.select(".chartBody") //.transition()
+            chartBody.data(data)
+
+            // // draw high and low
+            let stems = chartBody.selectAll(".stem")
+                .data(data)
+                .exit().remove()
+
+            stems = chartBody.selectAll(".stem")
+            .attr("x1", (d, i) => xScale2(d.Date))
+            .attr("x2", (d, i) => xScale2(d.Date))
+            .attr("y1", d => yScale(d.High) + 15)
+            .attr("y2", d => yScale(d.Low) + 15)
+            .attr("stroke-width", ".5")
+            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+
+
+            stems = chartBody.selectAll(".stem")
+            .data(data)
+            .enter()
+            .append("line")
+            .attr("class", "stem")
+            .attr("x1", (d, i) => xScale2(d.Date))
+            .attr("x2", (d, i) => xScale2(d.Date))
+            .attr("y1", d => yScale(d.High) + 15)
+            .attr("y2", d => yScale(d.Low) + 15)
+            .attr("stroke-width", ".5")
+            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+
+            let candles = chartBody.selectAll(".candle")
+                .data(data)
+                .exit().remove()
+
+            candles = chartBody.selectAll(".candle")
+            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+            .attr("stroke-width", ".25")
+            .attr('x', (d, i) => xScale2(d.Date) - 2)
+            .attr("class", "candle")
+            .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
+            .attr('width', "5")
+            .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+            .on("mouseover", handleMouseOver)
+            .on("mouseout", handleMouseOut);
+
+
+            candles = chartBody.selectAll(".candle")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+            .attr("stroke-width", ".25")
+            .attr('x', (d, i) => xScale2(d.Date) - 2)
+            .attr("class", "candle")
+            .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
+            .attr('width', "5")
+            .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+            .on("mouseover", handleMouseOver)
+            .on("mouseout", handleMouseOut);
+
+
+
+
+        }
+
+    </script>
+</body>
+
+</html>
