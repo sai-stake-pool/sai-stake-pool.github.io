@@ -38,7 +38,7 @@
 
 
         // d3.csv("xyz2.csv?id=asdf", function (error, data) {
-        d3.csv("http://localhost:5000/api/v1/resources/ticker", function (error, data) {
+        d3.csv("/api/v1/resources/ticker", function (error, data) {
             if (error) {
                 throw error;
             }
@@ -52,7 +52,7 @@
 
             console.log(data);
             dateMinArray = d3.min(data.map(r => r.Date))
-            dateMaxArray = d3.max(data.map(r => r.Date))
+            dateMaxArray = dateAdd(  d3.max(data.map(r => r.Date)), "minute", 15 )
 
             let dates = _.map(data, 'Date');
             console.log(dates)
@@ -88,7 +88,7 @@
 
             gY = svg.append("g")
                 .attr("class", "axis y-axis")
-                .attr("transform", "translate(" + (width + 135) + "," + (15) + ")")
+                .attr("transform", "translate(" + (width + 125) + "," + (15) + ")")
                 .call(yAxis);
 
 
@@ -111,7 +111,7 @@
                 .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
 
 
-                
+
 
             let candles = chartBody.selectAll(".candle")
                 .data(data)
@@ -129,22 +129,35 @@
                 .on("mouseout", handleMouseOut);
 
 
+            var sd = [{
+                Date: new Date(),
+                Open: 49000,
+                High: 49200,
+                Low: 48000,
+                Close: 48500
+            }]
+
+
             let ccGroup = svg.append("g")
-                .attr("class", "cc")
+                .attr("class", "ccg")
                 .attr("transform", "translate(" + 100 + "," + 0 + ")");
 
-            let ccandle = ccGroup.selectAll(".ccandle")
+            // ccGroup.append("rect")
+
+            let ccandle = ccGroup.selectAll(".cc")
+                .data(sd)
+                .enter()
                 .append("rect")
-                .attr("stroke", "darkgreen")
+                .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
                 .attr("stroke-width", ".25")
-                .attr('x', xScale2(new Date()) - 2)
-                .attr("class", "ccandle")
-                .attr('y', yScale(50000) + 15)
+                .attr('x', (d, i) => xScale2(d.Date) - 2)
+                .attr("class", "candle")
+                .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
                 .attr('width', "5")
-                .attr('height', yScale(50000) - yScale(49000))
-                .attr("fill", "green")
-                .on("mouseclick", al)
-            
+                .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+                .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+                .on("mouseover", handleMouseOver)
+                .on("mouseout", handleMouseOut);
 
         });
 
@@ -182,7 +195,7 @@
         }
 
         function getData(cb) {
-            d3.csv("http://localhost:5000/api/v1/resources/ticker", function (error, data) {
+            d3.csv("/api/v1/resources/ticker", function (error, data) {
                 if (error) {
                     throw error;
                 }
@@ -201,7 +214,8 @@
         function update(data) {
             console.log(data);
             dateMinArray = d3.min(data.map(r => r.Date))
-            dateMaxArray = d3.max(data.map(r => r.Date))
+            // dateMaxArray = d3.max(data.map(r => r.Date))
+            dateMaxArray = dateAdd(  d3.max(data.map(r => r.Date)), "minute", 15 )
 
             let dates = _.map(data, 'Date');
             console.log(dates)
@@ -244,62 +258,91 @@
                 .exit().remove()
 
             stems = chartBody.selectAll(".stem")
-            .attr("x1", (d, i) => xScale2(d.Date))
-            .attr("x2", (d, i) => xScale2(d.Date))
-            .attr("y1", d => yScale(d.High) + 15)
-            .attr("y2", d => yScale(d.Low) + 15)
-            .attr("stroke-width", ".5")
-            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+                .attr("x1", (d, i) => xScale2(d.Date))
+                .attr("x2", (d, i) => xScale2(d.Date))
+                .attr("y1", d => yScale(d.High) + 15)
+                .attr("y2", d => yScale(d.Low) + 15)
+                .attr("stroke-width", ".5")
+                .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
 
 
             stems = chartBody.selectAll(".stem")
-            .data(data)
-            .enter()
-            .append("line")
-            .attr("class", "stem")
-            .attr("x1", (d, i) => xScale2(d.Date))
-            .attr("x2", (d, i) => xScale2(d.Date))
-            .attr("y1", d => yScale(d.High) + 15)
-            .attr("y2", d => yScale(d.Low) + 15)
-            .attr("stroke-width", ".5")
-            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+                .data(data)
+                .enter()
+                .append("line")
+                .attr("class", "stem")
+                .attr("x1", (d, i) => xScale2(d.Date))
+                .attr("x2", (d, i) => xScale2(d.Date))
+                .attr("y1", d => yScale(d.High) + 15)
+                .attr("y2", d => yScale(d.Low) + 15)
+                .attr("stroke-width", ".5")
+                .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
 
             let candles = chartBody.selectAll(".candle")
                 .data(data)
                 .exit().remove()
 
             candles = chartBody.selectAll(".candle")
-            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
-            .attr("stroke-width", ".25")
-            .attr('x', (d, i) => xScale2(d.Date) - 2)
-            .attr("class", "candle")
-            .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
-            .attr('width', "5")
-            .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
-            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
-            .on("mouseover", handleMouseOver)
-            .on("mouseout", handleMouseOut);
+                .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+                .attr("stroke-width", ".25")
+                .attr('x', (d, i) => xScale2(d.Date) - 2)
+                .attr("class", "candle")
+                .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
+                .attr('width', "5")
+                .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+                .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+                .on("mouseover", handleMouseOver)
+                .on("mouseout", handleMouseOut);
 
 
             candles = chartBody.selectAll(".candle")
-            .data(data)
-            .enter()
-            .append("rect")
-            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
-            .attr("stroke-width", ".25")
-            .attr('x', (d, i) => xScale2(d.Date) - 2)
-            .attr("class", "candle")
-            .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
-            .attr('width', "5")
-            .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
-            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
-            .on("mouseover", handleMouseOver)
-            .on("mouseout", handleMouseOut);
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+                .attr("stroke-width", ".25")
+                .attr('x', (d, i) => xScale2(d.Date) - 2)
+                .attr("class", "candle")
+                .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
+                .attr('width', "5")
+                .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+                .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+                .on("mouseover", handleMouseOver)
+                .on("mouseout", handleMouseOut);
 
 
 
 
         }
+
+        /**
+         * Adds time to a date. Modelled after MySQL DATE_ADD function.
+         * Example: dateAdd(new Date(), 'minute', 30)  //returns 30 minutes from now.
+         * https://stackoverflow.com/a/1214753/18511
+         * 
+         * @param date  Date to start with
+         * @param interval  One of: year, quarter, month, week, day, hour, minute, second
+         * @param units  Number of units of the given interval to add.
+         */
+        function dateAdd(date, interval, units) {
+            if (!(date instanceof Date))
+                return undefined;
+            var ret = new Date(date); //don't change original date
+            var checkRollover = function () { if (ret.getDate() != date.getDate()) ret.setDate(0); };
+            switch (String(interval).toLowerCase()) {
+                case 'year': ret.setFullYear(ret.getFullYear() + units); checkRollover(); break;
+                case 'quarter': ret.setMonth(ret.getMonth() + 3 * units); checkRollover(); break;
+                case 'month': ret.setMonth(ret.getMonth() + units); checkRollover(); break;
+                case 'week': ret.setDate(ret.getDate() + 7 * units); break;
+                case 'day': ret.setDate(ret.getDate() + units); break;
+                case 'hour': ret.setTime(ret.getTime() + units * 3600000); break;
+                case 'minute': ret.setTime(ret.getTime() + units * 60000); break;
+                case 'second': ret.setTime(ret.getTime() + units * 1000); break;
+                default: ret = undefined; break;
+            }
+            return ret;
+        }
+
 
     </script>
 </body>
