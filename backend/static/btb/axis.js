@@ -119,16 +119,38 @@ class CrossFire {
             .attr("x1", 0)
             .attr("y1", this.y1)
             .attr("x2", this.width)
-            .attr("y2", this.y2);            
+            .attr("y2", this.y2);
 
-            // this.g.append('rect')
-            // .style("stroke", "lightgreen")
-            // .style("stroke-width", 1)
-            // .attr("fill", "none")
-            // .attr("x", 0)
-            // .attr("y", 0)
-            // .attr("width", 200)
-            // .attr("height", 200)
+        this.dateMarker = this.g.append("g")
+
+        let dateString = this.option.axctrl.xScale.invert(this.x1)
+        var dateTime = moment.utc(dateString).format("DD-MMM-YY HH:mm:ss");
+
+        let dateRect = this.dateMarker.append('rect')
+
+        let dateText = this.dateMarker.append("text")
+            .attr("x", 0)
+            .attr("y", 15)
+            // .attr("dy", ".35em")
+            .attr("font-size", "12")
+            .attr("font-family", "arial")
+            // .attr("font-weight", "bold")
+            .attr("fill", "blue")
+            .text(dateTime);
+
+        let dateLen = dateText.node().getComputedTextLength()
+
+        dateRect.style("stroke", "none")
+            .style("stroke-width", 1)
+            .attr("fill", "rgba(211, 211, 211, 0.85)")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", dateLen)
+            .attr("height", 20)
+
+        this.dateMarker
+            .attr("transform", "translate(" + ((dateLen / 2) * -1) + "," + (this.height) + ")")
+
 
     }
 
@@ -146,19 +168,27 @@ class CrossFire {
             .attr("x1", this.x1 - 5)
             .attr("y1", 0)
             .attr("x2", this.x2 - 5)
-            .attr("y2", this.height);       
+            .attr("y2", this.height);
 
         this.yline
             .attr("x1", 0)
             .attr("y1", this.y1)
             .attr("x2", (this.width - this.option.ayctrl.offset))
-            .attr("y2", this.y2);              
+            .attr("y2", this.y2);
+
+        this.dateMarker.select("rect")
+            .attr("x", (this.x1));
+
+        // get the date value
+        let dateString = this.option.axctrl.xScale.invert(this.x1)
+        var dateTime = moment(dateString).format("DD-MMM-YY HH:mm:ss");
+
+
+        this.dateMarker.select("text")
+            .attr("x", this.x1)
+            .text(dateTime)
     }
 
-    handleMouseMove() {
-        // console.log(d3.mouse(this));
-        // console.log(d3.event.target);
-    }    
 
 }
 

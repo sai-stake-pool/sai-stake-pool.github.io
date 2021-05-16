@@ -1,68 +1,100 @@
 <html>
-    <head>
-        <script src="https://d3js.org/d3.v4.min.js"></script>        
-        <script src="util.js"></script>
-        <script src="axis.js"></script>
-        <script>
-            class Person {
-                constructor(name) {
-                    this.name = name
-                }
 
-                getName() {
-                    return this.name;
-                }
+<head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>    
+    <script src="util.js"></script>
+    <script src="axis.js"></script>
+    <script>
+        class Person {
+            constructor(name) {
+                this.name = name
             }
 
-            let john = new Person("John");
-            console.log(john.getName())
-
-
-
-
-
-        </script>
-    </head>
-    <body>
-        <svg id="mainSvg" width="920" height="400"></svg> 
-        <!-- style="background-color:rgb(252, 246, 246)"></svg> -->
-
-
-        <script>
-
-            function handleMouseMove() {
-                let pos = d3.mouse(this)
-                cf.update(pos);
+            getName() {
+                return this.name;
             }
+        }
 
-            let svg = d3.select("#mainSvg");
-            svg.on("mousemove", handleMouseMove)
+        let john = new Person("John");
+        console.log(john.getName())
 
-            let yoption = {
-                ymin : 3999999,
-                ymax : 2999999,
-            }
 
-            let ayctrl = new YAxisCtrl(svg, yoption);
 
-            let date = new Date();
 
-            let xoption = {
-                dmin : dateAdd(date, "minute", -30),
-                drange : 60,
-                interval : "minute",
-                offset : ayctrl.offset
-            }
 
-            let axctrl = new XAxisCtrl(svg, xoption);
+    </script>
+    <style>
+        /* Disables the selection */
+        .disableselect {
+            -webkit-touch-callout: none;
+            /* iOS Safari */
+            -webkit-user-select: none;
+            /* Chrome/Safari/Opera */
+            -khtml-user-select: none;
+            /* Konqueror */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* Internet Explorer/Edge*/
+            user-select: none;
+            /* Non-prefixed version, currently 
+                                  not supported by any browser */
+        }
 
-            let cfoption = {
-                ayctrl : ayctrl,
-                axctrl : axctrl,
-            }
+        /* Disables the drag event 
+(mostly used for images) */
+        .disabledrag {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+    </style>
+</head>
 
-            let cf = new CrossFire(svg, cfoption)
+<body>
+    <svg id="mainSvg" class="disableselect" width="400" height="400"></svg>
+    <!-- style="background-color:rgb(252, 246, 246)"></svg> -->
 
-        </script>
-    </body>
+
+    <script>
+
+        function handleMouseMove() {
+            let pos = d3.mouse(this)
+            cf.update(pos);
+        }
+
+        let svg = d3.select("#mainSvg");
+        svg.on("mousemove", handleMouseMove)
+
+        let yoption = {
+            ymin: 50000,
+            ymax: 40000,
+        }
+
+        let ayctrl = new YAxisCtrl(svg, yoption);
+
+        let date = new Date();
+
+        let xoption = {
+            dmin: dateAdd(date, "minute", -30),
+            drange: 60,
+            interval: "minute",
+            offset: ayctrl.offset
+        }
+
+        let axctrl = new XAxisCtrl(svg, xoption);
+
+        let cfoption = {
+            ayctrl: ayctrl,
+            axctrl: axctrl,
+        }
+
+        let cf = new CrossFire(svg, cfoption)
+
+    </script>
+</body>
+
 </html>
