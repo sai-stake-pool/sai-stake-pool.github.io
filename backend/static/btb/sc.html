@@ -95,7 +95,8 @@
             var chartBody = svg.append("g")
                 .attr("class", "chartBody")
                 .attr("transform", "translate(" + 100 + "," + 0 + ")")
-                .attr("clip-path", "url(#clip)");
+                .attr("clip-path", "url(#clip)")
+                .on("mouseover", handleMouseOver)                
 
             // draw high and low
             let stems = chartBody.selectAll(".line")
