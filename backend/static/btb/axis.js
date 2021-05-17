@@ -3,14 +3,13 @@
 class XAxisCtrl {
     constructor(svg, option) {
         this.svg = svg;
-        this.margin = 25;
-        this.width = this.svg.attr("width") - this.margin
-        this.height = this.svg.attr("height") - this.margin;
+        this.width = this.svg.attr("width")
+        this.height = this.svg.attr("height");
         this.option = option;
 
         this.xScale = d3.scaleTime()
             .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
-            .range([0, (this.width - (10 + this.option.offset))])
+            .range([0, (this.width - (12 + this.option.offset))])
 
         // this.xScaleReverse = d3.scaleTime()
         //     .domain([0, this.width + 10])
@@ -18,7 +17,7 @@ class XAxisCtrl {
 
         this.g = this.svg.append("g")
             .attr("class", "axis x-axis")
-            .attr("transform", "translate(" + (0 + (this.margin - 20)) + "," + this.height + ")")
+            .attr("transform", "translate(" + (0) + "," + (this.height - 25) + ")")
             .call(d3.axisBottom(this.xScale))
 
 
@@ -43,19 +42,18 @@ class XAxisCtrl {
 class YAxisCtrl {
     constructor(svg, option) {
         this.svg = svg;
-        this.margin = 25;
         this.option = option;
-        this.width = this.svg.attr("width") - this.margin
-        this.height = this.svg.attr("height") - this.margin;
+        this.width = this.svg.attr("width")
+        this.height = this.svg.attr("height");
 
-        this.yScale = d3.scaleLinear().domain([this.option.ymin, this.option.ymax]).range([this.height - 15, 0]).nice();
+        this.yScale = d3.scaleLinear().domain([this.option.ymin, this.option.ymax]).range([this.height - 25, 0]).nice();
         this.yAxis = d3.axisRight()
             .scale(this.yScale)
 
 
         this.g = this.svg.append("g")
             .attr("class", "axis y-axis")
-            .attr("transform", "translate(" + (this.width) + "," + (15) + ")")
+            // .attr("transform", "translate(" + (this.width) + "," + (0) + ")")
             .call(this.yAxis);
 
         // update the location based on length of texts
@@ -69,7 +67,7 @@ class YAxisCtrl {
         console.log(max);
         this.offset = max;
         this.g
-            .attr("transform", "translate(" + (this.width - max) + "," + (15) + ")")
+            .attr("transform", "translate(" + (this.width - (max + 10)) + "," + (0) + ")")
 
 
     }
@@ -80,23 +78,23 @@ class CrossFire {
 
     constructor(svg, option) {
         this.svg = svg;
-        this.margin = 25;
 
         this.option = option;
-        this.width = this.svg.attr("width") - this.margin
-        this.height = this.svg.attr("height") - this.margin;
+        this.width = this.svg.attr("width")
+        this.height = this.svg.attr("height")
 
         this.x1 = 0;
         this.x2 = 0;
         this.y1 = 0;
         this.y2 = 0;
 
-        let t = this.option.axctrl.g.attr("transform")
-        let trvalue = getTransformation(t)
+        this.option.axctrl.g.attr("transform")
+        // let trvalue = getTransformation(t)
 
         this.g = svg.append("g")
             .attr("class", "crossFireBody")
-            .attr("transform", "translate(" + trvalue.translateX + "," + 0 + ")")
+            // .attr("transform", "translate(" + trvalue.translateX + "," + 0 + ")")
+            .attr("transform", "translate(0,0)")
             .attr("clip-path", "url(#clip)")
             .on("mousemove", this.handleMouseMove)
 
@@ -106,9 +104,9 @@ class CrossFire {
             .style("stroke-width", 1)
             .style("stroke-dasharray", ("3, 3"))
             .attr("class", "xline")
-            .attr("x1", this.x1 - 5)
+            .attr("x1", this.x1)
             .attr("y1", 0)
-            .attr("x2", this.x2 - 5)
+            .attr("x2", this.x2)
             .attr("y2", this.height);
 
         this.yline = this.g.append('line')
@@ -131,7 +129,6 @@ class CrossFire {
         let dateText = this.dateMarker.append("text")
             .attr("x", 0)
             .attr("y", 15)
-            // .attr("dy", ".35em")
             .attr("font-size", "12")
             .attr("font-family", "arial")
             // .attr("font-weight", "bold")
@@ -149,9 +146,37 @@ class CrossFire {
             .attr("height", 20)
 
         this.dateMarker
-            .attr("transform", "translate(" + ((dateLen / 2) * -1) + "," + (this.height) + ")")
+            .attr("transform", "translate(" + ((dateLen / 2) * -1) + "," + (this.height - 25) + ")")
 
 
+        this.priceMarker = this.g.append("g");
+
+        let price = this.calc(this.option.ayctrl.yScale.invert(this.y1))
+
+        let priceRect = this.priceMarker.append('rect')
+
+        let priceText = this.priceMarker.append("text")
+            // .attr("x", this.x1)
+            // .attr("y", (this.y1))
+            .attr("y", (20/2) + 5)
+            .attr("font-size", "12")
+            .attr("font-family", "arial")
+            .attr("fill", "blue")
+            .text(price);
+
+        let priceLen = priceText.node().getComputedTextLength()
+
+        priceRect.style("stroke", "none")
+            .style("stroke-width", 1)
+            .attr("fill", "rgba(211, 211, 211, 0.85)")
+            // .attr("x", this.x1)
+            // .attr("y", this.y1)
+            .attr("width", priceLen + 10)
+            .attr("height", 20)
+
+
+        this.priceMarker
+            .attr("transform", `translate(${this.width - (priceLen + 2)}, ${this.y1 - (20 / 2)} )`)
     }
 
     update(pos) {
@@ -165,9 +190,9 @@ class CrossFire {
         this.y2 = y;
 
         this.xline
-            .attr("x1", this.x1 - 5)
+            .attr("x1", this.x1)
             .attr("y1", 0)
-            .attr("x2", this.x2 - 5)
+            .attr("x2", this.x2)
             .attr("y2", this.height);
 
         this.yline
@@ -187,10 +212,33 @@ class CrossFire {
         this.dateMarker.select("text")
             .attr("x", this.x1)
             .text(dateTime)
+
+
+        // get the price value
+        let price = this.calc(this.option.ayctrl.yScale.invert(this.y1))
+        console.log(this.height - this.y1 - 25)
+
+        let priceText = this.priceMarker.select("text")
+            .text(price)
+
+        let priceLen = priceText.node().getComputedTextLength()
+
+
+        this.priceMarker.select("rect")
+            .attr("width", priceLen + 10);
+
+        this.priceMarker
+            .attr("transform", `translate(${this.width - (priceLen + 2)}, ${this.y1 - (20 / 2)} )`)
     }
+
+    calc(num) {
+        return num.toString().match(/^-?\d+(?:\.\d{0,2})?/)[0]
+    }    
 
 
 }
+
+
 
 
 

@@ -55,8 +55,10 @@
 </head>
 
 <body>
-    <svg id="mainSvg" class="disableselect" width="400" height="400"></svg>
-    <!-- style="background-color:rgb(252, 246, 246)"></svg> -->
+    <div style="margin: 40px;">
+        <svg id="mainSvg" class="disableselect" width="600" height="400" style="background-color:rgb(252, 246, 246)"></svg>
+
+    </div>
 
 
     <script>
@@ -69,10 +71,15 @@
         let svg = d3.select("#mainSvg");
         svg.on("mousemove", handleMouseMove)
 
+        // let yoption = {
+        //     ymin: 35000,
+        //     ymax: 55000,
+        // }
+
         let yoption = {
-            ymin: 50000,
-            ymax: 40000,
-        }
+            ymin: 3.50,
+            ymax: 5.50,
+        }        
 
         let ayctrl = new YAxisCtrl(svg, yoption);
 
