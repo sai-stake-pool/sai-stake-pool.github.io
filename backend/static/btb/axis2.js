@@ -11,6 +11,13 @@ class XAxisCtrl {
             .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
             .range([0, (this.width - (12 + this.option.offset))])
 
+        this.universalXScale = d3.scaleTime()
+        .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
+        .range([0, (this.width - (12 + this.option.offset))])
+        
+        
+        console.log("date marker point " + this.universalXScale(this.option.startDate))
+
         // this.xScaleReverse = d3.scaleTime()
         //     .domain([0, this.width + 10])
         //     .range([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
@@ -27,13 +34,15 @@ class XAxisCtrl {
         this.option = option;
         this.xScale = d3.scaleTime()
             .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
-            .range([0, this.width + 10])
+            .range([0, (this.width - (12 + this.option.offset))])
 
         let svgTransition = this.svg.transition();
 
         svgTransition.select(".x-axis")
-            .duration(500)
+            .duration(0)
             .call(d3.axisBottom(this.xScale))
+
+
     }
 
 
@@ -72,7 +81,6 @@ class YAxisCtrl {
 
     }
 }
-
 
 class CrossFire {
 
@@ -242,63 +250,133 @@ class CrossFire {
 }
 
 
-class CandleChart {
-    constructor(svg, option) {
+class UpdateManager {
+    constructor(svg) {
         this.svg = svg;
-        this.svg.node().addEventListener('xyUpdate', this.xyUpdate);
+    }
+
+    initialize(data) {
+
+        var ymin = d3.min(data.map(r => r.Low * .995));
+        var ymax = d3.max(data.map(r => (r.High * 1.005)));
+
+        let yoption = {
+            ymin: ymin,
+            ymax: ymax,
+        }
+
+        this.ayctrl = new YAxisCtrl(this.svg, yoption);
+
+        let date = new Date();
+
+        let range = 60 * 1.5;
+
+        let xoption = {
+            startDate : date,
+            dmin: dateAdd(date, "minute", range * -1),
+            drange: range * 1.25,
+            interval: "minute",
+            offset: this.ayctrl.offset
+        }
+
+        this.axctrl = new XAxisCtrl(this.svg, xoption);
+
+        let cfoption = {
+            ayctrl: this.ayctrl,
+            axctrl: this.axctrl,
+        }
+
+        this.cf = new CrossFire(this.svg, cfoption)
+
+
+        return {
+            ayctrl: this.ayctrl,
+            axctrl: this.axctrl,
+            data: data
+        };
+
+    }
+
+    update(pos) {
+        if(this.cf)
+            this.cf.update(pos);
+    }
+
+    drag(v) {
+        let x = +svg.attr("x");
+        console.log(`move to -> ${x}`)        
+        if(this.axctrl) {
+            let xdate = this.axctrl.universalXScale.invert(x);
+            console.log(`new date : ${xdate}` )
+
+            let xoption = {
+                dmin: xdate,
+                drange: 60 * 1.5,
+                interval: "minute",
+                offset: this.ayctrl.offset
+            }            
+
+            this.axctrl.update(xoption);
+            // this.cf.option.axctrl = this.axctrl;
+        }
+    }
+
+
+
+}
+
+class CandleChart {
+    constructor(svg) {
+        this.svg = svg;
+        // this.svg.node().addEventListener('xyUpdate', this.xyUpdate);
         this.width = +this.svg.attr("width")
         this.height = +this.svg.attr("height");
-        this.option = option;
 
 
         this.g = this.svg.append("g")
         .attr("class", "chartBody")
 
-        console.log(this.option.data)
+    }
+
+    update(option) {
+        console.log(option.data)
         this.g.selectAll(".stem")
-        .data(this.option.data)
+        .data(option.data)
         .enter()
         .append("line")
         .attr("class", "stem")
-        .attr("x1", (d, i) => this.option.axctrl.xScale(d.Date))
-        .attr("x2", (d, i) => this.option.axctrl.xScale(d.Date))
-        .attr("y1", d => this.option.ayctrl.yScale(d.High) + 15)
-        .attr("y2", d => this.option.ayctrl.yScale(d.Low) + 15)
+        .attr("x1", (d, i) => option.axctrl.xScale(d.Date))
+        .attr("x2", (d, i) => option.axctrl.xScale(d.Date))
+        .attr("y1", d => option.ayctrl.yScale(d.High) + 15)
+        .attr("y2", d => option.ayctrl.yScale(d.Low) + 15)
         .attr("stroke-width", ".5")
         .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");        
 
         this.g.selectAll(".candle")
-        .data(this.option.data)
+        .data(option.data)
         .enter()
         .append("rect")
         .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
         .attr("stroke-width", ".25")
-        .attr('x', (d, i) => this.option.axctrl.xScale(d.Date) - 2)
+        .attr('x', (d, i) => option.axctrl.xScale(d.Date) - 2)
         .attr("class", "candle")
-        .attr('y', d => this.option.ayctrl.yScale(Math.max(d.Open, d.Close)) + 15)
+        .attr('y', d => option.ayctrl.yScale(Math.max(d.Open, d.Close)) + 15)
         .attr('width', "5")
-        .attr('height', d => (d.Open === d.Close) ? 1 : this.option.ayctrl.yScale(Math.min(d.Open, d.Close)) - this.option.ayctrl.yScale(Math.max(d.Open, d.Close)))
+        .attr('height', d => (d.Open === d.Close) ? 1 : option.ayctrl.yScale(Math.min(d.Open, d.Close)) - option.ayctrl.yScale(Math.max(d.Open, d.Close)))
         .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
-        // .on("mouseover", handleMouseOver)
-        // .on("mouseout", handleMouseOut);
-
-        // adjust the axctrl axis bottom
-
-        // let xoption = {
-        //     dmin: dateAdd(date, "minute", -60),
-        //     drange: 60,
-        //     interval: "minute",
-        //     offset: ayctrl.offset
-        // }
 
 
+    }    
+
+    // xyUpdate(e) {
+    //     console.log(e);
+    //     var self = this;
+    //     console.log("in xyupdate")
+    //     console.log(self)
+    //     // self.update(e.detail)
+    // }
 
 
-    }
-
-    xyUpdate(e) {
-        console.log(e);
-    }
 }
 
 

@@ -1,0 +1,125 @@
+<html>
+
+<head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+        integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+        crossorigin="anonymous"></script>
+    <script src="util.js"></script>
+    <script src="axis.js"></script>
+    <script src="dataAdapter.js"></script>
+    <script>
+        class Person {
+            constructor(name) {
+                this.name = name
+            }
+
+            getName() {
+                return this.name;
+            }
+        }
+
+        let john = new Person("John");
+        console.log(john.getName())
+
+
+
+
+
+    </script>
+    <style>
+        /* Disables the selection */
+        .disableselect {
+            -webkit-touch-callout: none;
+            /* iOS Safari */
+            -webkit-user-select: none;
+            /* Chrome/Safari/Opera */
+            -khtml-user-select: none;
+            /* Konqueror */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* Internet Explorer/Edge*/
+            user-select: none;
+            /* Non-prefixed version, currently 
+                                  not supported by any browser */
+        }
+
+        /* Disables the drag event 
+(mostly used for images) */
+        .disabledrag {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="margin: 40px;">
+        <svg id="mainSvg" class="disableselect" width="600" height="400"
+            style="background-color:rgb(252, 246, 246)"></svg>
+
+    </div>
+
+
+    <script>
+
+        function handleMouseMove() {
+            let pos = d3.mouse(this)
+            cf.update(pos);
+        }
+
+        let svg = d3.select("#mainSvg");
+        svg.on("mousemove", handleMouseMove)
+
+        let yoption = {
+            ymin: 43000,
+            ymax: 46800,
+        }
+
+        // let yoption = {
+        //     ymin: 3.50,
+        //     ymax: 5.50,
+        // }        
+
+        let ayctrl = new YAxisCtrl(svg, yoption);
+
+        let date = new Date();
+        // date = new Date('16 May 2021 17:02:00');
+
+        let xoption = {
+            dmin: dateAdd(date, "minute", 60 * 1.5 * -1),
+            drange: 60 * 1.5,
+            interval: "minute",
+            offset: ayctrl.offset
+        }
+
+        let axctrl = new XAxisCtrl(svg, xoption);
+
+        let cfoption = {
+            ayctrl: ayctrl,
+            axctrl: axctrl,
+        }
+
+        let cf = new CrossFire(svg, cfoption)
+
+        // get some data
+        var da = new DataFeed()
+        da.download("/api/v1/resources/ticker")
+            .then(data => {
+                let cc = new CandleChart(svg, {
+                    ayctrl: ayctrl,
+                    axctrl: axctrl,
+                    data: data
+                })
+
+            })
+
+
+    </script>
+</body>
+
+</html>

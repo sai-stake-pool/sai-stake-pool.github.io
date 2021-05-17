@@ -1,0 +1,122 @@
+<html>
+
+<head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+        integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+        crossorigin="anonymous"></script>
+    <script src="util.js"></script>
+    <script src="axis2.js"></script>
+    <script src="dataAdapter.js"></script>
+    <style>
+        /* Disables the selection */
+        .disableselect {
+            -webkit-touch-callout: none;
+            /* iOS Safari */
+            -webkit-user-select: none;
+            /* Chrome/Safari/Opera */
+            -khtml-user-select: none;
+            /* Konqueror */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* Internet Explorer/Edge*/
+            user-select: none;
+            /* Non-prefixed version, currently 
+                                  not supported by any browser */
+        }
+
+        /* Disables the drag event 
+(mostly used for images) */
+        .disabledrag {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="margin: 40px;">
+        <svg id="mainSvg" class="disableselect" width="800" height="600"
+            style="background-color:rgb(252, 246, 246)"></svg>
+
+    </div>
+
+
+    <script>
+        let svg = d3.select("#mainSvg");
+        svg.on("mousemove", handleMouseMove)
+
+        let um = new UpdateManager(svg);
+        let cc = new CandleChart(svg)
+
+
+        var deltaX, deltaY;
+
+        var startingX = 0;
+
+        var dragHandler = d3.drag()
+            .on("start", function () {
+                console.log("starting")
+                var current = d3.select(this);
+                deltaX = current.attr("x") - d3.event.x;
+                deltaY = current.attr("y") - d3.event.y;
+                console.log(`delta x : ${deltaX}`)
+
+                startingX = d3.event.x;
+
+            })
+            .on("drag", function () {
+                // console.log(`${d3.event.x} : ${d3.event.y} vs ${deltaX}, ${deltaY}`)
+                console.log(d3.event.x - startingX)
+
+                var current = d3.select(this);
+                var currentX = current.attr("x")
+                current.attr("x", current.attr("x") - (d3.event.x - startingX))
+                    um.drag(1)                 
+
+
+            })
+            .on("end", function() {
+                               
+            });
+
+        dragHandler(svg);
+
+
+        // var dragcontainer = d3.drag()
+        //     .on("drag", function (d, i) {
+        //         d3.select(this).attr("transform", "translate(" + (d.x = d3.event.x) + "," + (d.y = d3.event.y) + ")");
+        //     });
+        // var g = d3.select(".chartBody").datum({ x: 0, y: 0 }).call(dragcontainer)
+
+
+        // get some data
+
+        var da = new DataFeed()
+        da.download("/api/v1/resources/ticker")
+            .then(data => {
+                let option = um.initialize(data);
+                var p = new Promise((resolve, reject) => {
+                    resolve(option)
+                })
+                return p;
+
+            })
+            // .then(option => {
+            //     cc.update(option)
+            // })
+
+        function handleMouseMove() {
+            let pos = d3.mouse(this)
+            um.update(pos);
+        }
+
+
+    </script>
+</body>
+
+</html>
