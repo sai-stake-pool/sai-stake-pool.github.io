@@ -12,10 +12,10 @@ class XAxisCtrl {
             .range([0, (this.width - (12 + this.option.offset))])
 
         this.universalXScale = d3.scaleTime()
-        .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
-        .range([0, (this.width - (12 + this.option.offset))])
-        
-        
+            .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
+            .range([0, (this.width - (12 + this.option.offset))])
+
+
         console.log("date marker point " + this.universalXScale(this.option.startDate))
 
         // this.xScaleReverse = d3.scaleTime()
@@ -102,8 +102,9 @@ class CrossFire {
             .attr("class", "crossFireBody")
             // .attr("transform", "translate(" + trvalue.translateX + "," + 0 + ")")
             .attr("transform", "translate(0,0)")
-            .attr("clip-path", "url(#clip)")
-            .on("mousemove", this.handleMouseMove)
+            .style("pointer-events", "none")
+            // .attr("clip-path", "url(#clip)")
+            // .on("mousemove", this.handleMouseMove)
 
 
         this.xline = this.g.append('line')
@@ -252,6 +253,34 @@ class CrossFire {
 class UpdateManager {
     constructor(svg) {
         this.svg = svg;
+        this.width = +svg.attr("width")
+        this.height = +svg.attr("height")
+
+        // Add a clipPath: everything out of this area won't be drawn.
+        var clip = this.svg.append("defs").append("SVG:clipPath")
+            .attr("id", "clip")
+            .append("SVG:rect")
+            .attr("width", this.width)
+            .attr("height", this.height - 25)
+            .attr("x", 0)
+            .attr("y", 0);
+
+
+
+        this.zoom = d3.zoom()
+            .scaleExtent([.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
+            .extent([[0, 0], [this.width, this.height]])
+            .on("zoom", updateChart);
+
+        this.svg.append("rect")
+            .attr("width", this.width)
+            .attr("height", this.height)
+            .style("fill", "none")
+            .style("pointer-events", "all")
+            // .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            // .on("mousemove", handleMouseMove)            
+            .call(this.zoom);
+
     }
 
     initialize(data) {
@@ -266,12 +295,17 @@ class UpdateManager {
 
         this.ayctrl = new YAxisCtrl(this.svg, yoption);
 
+
+        this.svg.select("#clip").select("rect")
+            .attr("width", this.width - (this.ayctrl.offset + 10))
+
+
         let date = new Date();
 
-        let range = 60 * 1.5;
+        let range = 30 * 1.5;
 
         let xoption = {
-            startDate : date,
+            startDate: date,
             dmin: dateAdd(date, "minute", range * -1),
             drange: range * 1.25,
             interval: "minute",
@@ -288,6 +322,9 @@ class UpdateManager {
         this.cf = new CrossFire(this.svg, cfoption)
 
 
+
+
+
         return {
             ayctrl: this.ayctrl,
             axctrl: this.axctrl,
@@ -297,23 +334,23 @@ class UpdateManager {
     }
 
     update(pos) {
-        if(this.cf)
+        if (this.cf)
             this.cf.update(pos);
     }
 
     drag(v) {
         let x = +svg.attr("x");
-        console.log(`move to -> ${x}`)        
-        if(this.axctrl) {
+        console.log(`move to -> ${x}`)
+        if (this.axctrl) {
             let xdate = this.axctrl.universalXScale.invert(x);
-            console.log(`new date : ${xdate}` )
+            console.log(`new date : ${xdate}`)
 
             let xoption = {
                 dmin: xdate,
                 drange: 60 * 1.5,
                 interval: "minute",
                 offset: this.ayctrl.offset
-            }            
+            }
 
             this.axctrl.update(xoption);
             // this.cf.option.axctrl = this.axctrl;
@@ -341,67 +378,68 @@ class CandleChart {
 
 
         this.g = this.svg.append("g")
-        .attr("class", "chartBody")
+            .attr("class", "chartBody")
+            .attr("clip-path", "url(#clip)")
 
     }
 
     update(option) {
         console.log(option.data)
         this.g.selectAll(".stem")
-        .data(option.data)
-        .enter()
-        .append("line")
-        .attr("class", "stem")
-        .attr("x1", (d, i) => option.axctrl.xScale(d.Date))
-        .attr("x2", (d, i) => option.axctrl.xScale(d.Date))
-        .attr("y1", d => option.ayctrl.yScale(d.High) + 15)
-        .attr("y2", d => option.ayctrl.yScale(d.Low) + 15)
-        .attr("stroke-width", ".5")
-        .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");        
+            .data(option.data)
+            .enter()
+            .append("line")
+            .attr("class", "stem")
+            .attr("x1", (d, i) => option.axctrl.xScale(d.Date))
+            .attr("x2", (d, i) => option.axctrl.xScale(d.Date))
+            .attr("y1", d => option.ayctrl.yScale(d.High) + 15)
+            .attr("y2", d => option.ayctrl.yScale(d.Low) + 15)
+            .attr("stroke-width", ".5")
+            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
 
         this.g.selectAll(".candle")
-        .data(option.data)
-        .enter()
-        .append("rect")
-        .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
-        .attr("stroke-width", ".25")
-        .attr('x', (d, i) => option.axctrl.xScale(d.Date) - 2)
-        .attr("class", "candle")
-        .attr('y', d => option.ayctrl.yScale(Math.max(d.Open, d.Close)) + 15)
-        .attr('width', "5")
-        .attr('height', d => (d.Open === d.Close) ? 1 : option.ayctrl.yScale(Math.min(d.Open, d.Close)) - option.ayctrl.yScale(Math.max(d.Open, d.Close)))
-        .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+            .data(option.data)
+            .enter()
+            .append("rect")
+            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+            .attr("stroke-width", ".25")
+            .attr('x', (d, i) => option.axctrl.xScale(d.Date) - 2)
+            .attr("class", "candle")
+            .attr('y', d => option.ayctrl.yScale(Math.max(d.Open, d.Close)) + 15)
+            .attr('width', "5")
+            .attr('height', d => (d.Open === d.Close) ? 1 : option.ayctrl.yScale(Math.min(d.Open, d.Close)) - option.ayctrl.yScale(Math.max(d.Open, d.Close)))
+            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
 
 
-    }    
+    }
 
     refresh(xScale, yScale) {
         this.svg.select(".chartBody")
-        .selectAll(".stem")
-        .attr("x1", (d, i) => xScale(d.Date))
-        .attr("x2", (d, i) => xScale(d.Date))
-        .attr("y1", d => yScale(d.High) + 15)
-        .attr("y2", d => yScale(d.Low) + 15)
-        .attr("stroke-width", ".5")
-        .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");        
+            .selectAll(".stem")
+            .attr("x1", (d, i) => xScale(d.Date))
+            .attr("x2", (d, i) => xScale(d.Date))
+            .attr("y1", d => yScale(d.High) + 15)
+            .attr("y2", d => yScale(d.Low) + 15)
+            .attr("stroke-width", ".5")
+            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
 
         this.svg.select(".chartBody")
-        .selectAll(".candle")
-        .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
-        .attr("stroke-width", ".25")
-        .attr('x', (d, i) => {
-            var x = xScale(d.Date) - 2; 
-            console.log(x)
-            if(xScale(d) > xScale.range[1]) {
-                x = x * -1;
-            }
-            return x
-        })
-        .attr("class", "candle")
-        .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
-        .attr('width', "5")
-        .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
-        .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")        
+            .selectAll(".candle")
+            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+            .attr("stroke-width", ".25")
+            .attr('x', (d, i) => {
+                var x = xScale(d.Date) - 2;
+                console.log(x)
+                if (xScale(d) > xScale.range[1]) {
+                    x = x * -1;
+                }
+                return x
+            })
+            .attr("class", "candle")
+            .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
+            .attr('width', "5")
+            .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
     }
 
     // xyUpdate(e) {

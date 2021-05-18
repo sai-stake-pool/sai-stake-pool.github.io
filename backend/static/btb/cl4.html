@@ -40,7 +40,7 @@
 
 <body>
     <div style="margin: 40px;">
-        <svg id="mainSvg" class="disableselect" width="800" height="600"
+        <svg id="mainSvg" class="disableselect" width="400" height="500"
             style="background-color:rgb(252, 246, 246)"></svg>
 
     </div>
@@ -52,6 +52,7 @@
 
         let um = new UpdateManager(svg);
         let cc = new CandleChart(svg)
+        um.subscribe(cc.refresh);
 
 
         var deltaX, deltaY;
@@ -60,28 +61,24 @@
 
         var dragHandler = d3.drag()
             .on("start", function () {
-                console.log("starting")
-                var current = d3.select(this);
-                deltaX = current.attr("x") - d3.event.x;
-                deltaY = current.attr("y") - d3.event.y;
-                console.log(`delta x : ${deltaX}`)
+                console.log("starting" + d3.event.x)
+                // var current = d3.select(this);
+                // deltaX = current.attr("x") - d3.event.x;
+                // deltaY = current.attr("y") - d3.event.y;
+                // console.log(`delta x : ${deltaX}`)
 
                 startingX = d3.event.x;
 
             })
             .on("drag", function () {
                 // console.log(`${d3.event.x} : ${d3.event.y} vs ${deltaX}, ${deltaY}`)
-                console.log(d3.event.x - startingX)
-
-                var current = d3.select(this);
-                var currentX = current.attr("x")
-                current.attr("x", current.attr("x") - (d3.event.x - startingX))
-                    um.drag(1)                 
-
+                um.drag(1)   
 
             })
             .on("end", function() {
-                               
+                console.log(d3.event.x - startingX)
+                // svg.attr("x",svg.attr("x") - (d3.event.x - startingX))
+                                                   
             });
 
         dragHandler(svg);
@@ -96,6 +93,8 @@
 
         // get some data
 
+        // https://www.d3-graph-gallery.com/graph/interactivity_zoom.html#axisZoom
+
         var da = new DataFeed()
         da.download("/api/v1/resources/ticker")
             .then(data => {
@@ -106,9 +105,9 @@
                 return p;
 
             })
-            // .then(option => {
-            //     cc.update(option)
-            // })
+            .then(option => {
+                // cc.update(option)
+            })
 
         function handleMouseMove() {
             let pos = d3.mouse(this)

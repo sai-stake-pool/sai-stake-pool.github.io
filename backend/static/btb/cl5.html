@@ -1,0 +1,172 @@
+<html>
+
+<head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+        integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+        crossorigin="anonymous"></script>
+    <script src="util.js"></script>
+    <script src="axis3.js"></script>
+    <script src="dataAdapter.js"></script>
+    <style>
+        /* Disables the selection */
+        .disableselect {
+            -webkit-touch-callout: none;
+            /* iOS Safari */
+            -webkit-user-select: none;
+            /* Chrome/Safari/Opera */
+            -khtml-user-select: none;
+            /* Konqueror */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* Internet Explorer/Edge*/
+            user-select: none;
+            /* Non-prefixed version, currently 
+                                  not supported by any browser */
+        }
+
+        /* Disables the drag event 
+(mostly used for images) */
+        .disabledrag {
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="margin: 40px;">
+        <svg id="mainSvg" class="disableselect" width="640" height="480"
+            ></svg>
+            <!-- style="background-color:rgb(252, 246, 246)"></svg> -->
+    </div>
+    <div>
+        <input id="console" type="text" value="sdfs" size="50" />
+    </div>
+
+
+    <script>
+        let svg = d3.select("#mainSvg");
+
+        let um = new UpdateManager(svg);
+        let cc = new CandleChart(svg)
+        // um.subscribe(cc.refresh);
+
+
+        var deltaX, deltaY;
+
+        var startingX = 0;
+
+        // var dragHandler = d3.drag()
+        //     .on("start", function () {
+        //         console.log("starting" + d3.event.x)
+        //         // var current = d3.select(this);
+        //         // deltaX = current.attr("x") - d3.event.x;
+        //         // deltaY = current.attr("y") - d3.event.y;
+        //         // console.log(`delta x : ${deltaX}`)
+
+        //         startingX = d3.event.x;
+
+        //     })
+        //     .on("drag", function () {
+        //         // console.log(`${d3.event.x} : ${d3.event.y} vs ${deltaX}, ${deltaY}`)
+        //         um.drag(1)   
+
+        //     })
+        //     .on("end", function() {
+        //         console.log(d3.event.x - startingX)
+        //         // svg.attr("x",svg.attr("x") - (d3.event.x - startingX))
+
+        //     });
+
+        // dragHandler(svg);
+
+
+        // var dragcontainer = d3.drag()
+        //     .on("drag", function (d, i) {
+        //         d3.select(this).attr("transform", "translate(" + (d.x = d3.event.x) + "," + (d.y = d3.event.y) + ")");
+        //     });
+        // var g = d3.select(".chartBody").datum({ x: 0, y: 0 }).call(dragcontainer)
+
+
+        // get some data
+
+        // https://www.d3-graph-gallery.com/graph/interactivity_zoom.html#axisZoom
+
+        var da = new DataFeed()
+        da.download("/api/v1/resources/ticker")
+            .then(data => {
+                let option = um.initialize(data);
+                var p = new Promise((resolve, reject) => {
+                    resolve(option)
+                })
+                return p;
+
+            })
+            .then(option => {
+                cc.update(option)
+
+                // let zoom = d3.zoom()
+                //     .scaleExtent([.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
+                //     .extent([[0, 0], [this.width, this.height]])
+                //     .on("zoom", updateChart);
+
+                // svg.append("rect")
+                //     .attr("width", this.width)
+                //     .attr("height", this.height)
+                //     .style("fill", "none")
+                //     .style("pointer-events", "all")
+                //     // .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+                //     .call(zoom);
+
+                svg.on("mousemove", handleMouseMove)
+
+            })
+
+        function handleMouseMove() {
+            let pos = d3.mouse(this)
+            // console.log(pos);
+            um.update(pos);
+
+            let dateString = um.axctrl.xScale.invert(pos[0])
+            var dateTime = moment(dateString).format("DD-MMM-YY HH:mm:ss");
+
+            let price = um.cf.addZeroes(um.ayctrl.yScale.invert(pos[1]))
+
+            document.getElementById("console").value = `${dateTime}:${price}`;
+        }
+
+        function updateChart() {
+            // recover the new scale
+            // var newX = d3.event.transform.rescaleX(x);
+            // var newY = d3.event.transform.rescaleY(y);
+            var newXScale = d3.event.transform.rescaleX(um.axctrl.xScale);
+            var newYScale = d3.event.transform.rescaleY(um.ayctrl.yScale);
+
+
+            // update axes with these new boundaries
+
+            // xAxis.call(d3.axisBottom(newX))
+            // yAxis.call(d3.axisLeft(newY))
+
+            um.axctrl.g.call(d3.axisBottom(newXScale));
+            um.ayctrl.g.call(d3.axisRight(newYScale));
+
+            // update circle position
+            // scatter
+            // .selectAll("circle")
+            // .attr('cx', function(d) {return newX(d.Sepal_Length)})
+            // .attr('cy', function(d) {return newY(d.Petal_Length)});        
+            cc.refresh(newXScale, newYScale);    
+
+        }
+
+
+    </script>
+</body>
+
+</html>
