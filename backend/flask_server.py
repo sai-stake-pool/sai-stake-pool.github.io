@@ -44,7 +44,7 @@ def ticker():
     data = public_client.get_product_historic_rates('BTC-USD', granularity=60)
     l.append('Date,Open,High,Low,Close,Volume')
     items = [('%s,%s,%s,%s,%s,%s' % (datetime.fromtimestamp(l[0]), l[3], l[2], l[1], l[4], l[5]) ) for l in data[::-1]]
-    for i in items[-100:]:
+    for i in items:
         l.append(i)
 
     csv = ''.join(['%s\n' % x for x in l])
