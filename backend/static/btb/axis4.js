@@ -26,8 +26,6 @@ class XAxisCtrl {
             .attr("class", "axis x-axis")
             .attr("transform", "translate(" + (0) + "," + (this.height - 25) + ")")
             .call(d3.axisBottom(this.xScale))
-
-
     }
 
     // update(option) {
@@ -290,11 +288,8 @@ class UpdateManager {
 
     initialize(data) {
 
-
-        var ydata = data.slice(250, 300);
-
-        var ymin = d3.min(ydata.map(r => r.Low * .98));
-        var ymax = d3.max(ydata.map(r => (r.High * 1.005)));
+        var ymin = d3.min(data.map(r => r.Low * .995));
+        var ymax = d3.max(data.map(r => (r.High * 1.005)));
 
         let yoption = {
             ymin: ymin,
@@ -308,9 +303,9 @@ class UpdateManager {
             .attr("width", this.width - (this.ayctrl.offset + 10))
 
 
-        // let date = new Date();
-        let date = d3.max(data.map(r => r.Date));
+        // dateMaxArray = dateAdd(  , "minute", 15 )
 
+        let date = d3.max(data.map(r => r.Date));
 
         let range = 30 * 1.5;
 
@@ -381,14 +376,14 @@ class UpdateManager {
 class CandleChart {
     constructor(svg) {
         this.svg = svg;
-        // this.svg.node().addEventListener('xyUpdate', this.xyUpdate);
+
         this.width = +this.svg.attr("width")
         this.height = +this.svg.attr("height");
 
 
-        this.g = this.svg.append("g")
-            .attr("class", "chartBody")
-            .attr("clip-path", "url(#clip)")
+        // this.g = this.svg.append("g")
+        //     .attr("class", "chartBody")
+        //     .attr("clip-path", "url(#clip)")
 
     }
 
