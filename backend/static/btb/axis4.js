@@ -326,9 +326,21 @@ class UpdateManager {
         this.svg = svg;
         this.width = +svg.attr("width")
         this.height = +svg.attr("height")
+        this.updateList = [];
+        this.cancelList = [];
+        this.onUpdate = ()=>{
+            this.updateList.forEach(f => {
+                f();
+            })
+        };
+        this.onCancel = ()=>{
+            this.cancelList.forEach(f => {
+                f();
+            })
+        }
 
         // Add a clipPath: everything out of this area won't be drawn.
-        var clip = this.svg.append("defs").append("SVG:clipPath")
+        this.svg.append("defs").append("SVG:clipPath")
             .attr("id", "clip")
             .append("SVG:rect")
             .attr("width", this.width)
@@ -341,8 +353,7 @@ class UpdateManager {
         this.zoom = d3.zoom()
             .scaleExtent([.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
             .extent([[0, 0], [this.width, this.height]])
-            .on("zoom", updateChart)
-            .on("end", cancelChart);
+ 
 
         this.svg.append("rect")
             .attr("width", this.width)
@@ -355,7 +366,8 @@ class UpdateManager {
 
     }
 
-    initialize(data) {
+
+    initialize(data, gObj) {
 
         console.log("data")
         console.log(data)
@@ -363,8 +375,8 @@ class UpdateManager {
 
         var ydata = data; //.slice(250, 300);
 
-        var ymin = d3.min(ydata.map(r => r.Low * .98));
-        var ymax = d3.max(ydata.map(r => (r.High * 1.005)));
+        var ymin = d3.min(ydata.map(r => r.Low * .995));
+        var ymax = d3.max(ydata.map(r => (r.High * .945)));
 
         let yoption = {
             ymin: ymin,
@@ -378,7 +390,6 @@ class UpdateManager {
             .attr("width", this.width - (this.ayctrl.offset + 10))
 
 
-        // let date = new Date();
         let date = d3.max(data.map(r => r.Date));
 
 
@@ -386,9 +397,9 @@ class UpdateManager {
 
         let xoption = {
             startDate: date,
-            dmin: dateAdd(date, "minute", range * -1),
+            dmin: dateAdd(date, gObj.interval, range * -1),
             drange: range * 1.25,
-            interval: "minute",
+            interval: gObj.interval,
             offset: this.ayctrl.offset
         }
 
@@ -410,6 +421,56 @@ class UpdateManager {
         };
 
     }
+
+    // reinitialize(data, gObj) {
+    //     var ydata = data; //.slice(250, 300);
+
+    //     var ymin = d3.min(ydata.map(r => r.Low * .98));
+    //     var ymax = d3.max(ydata.map(r => (r.High * 1.005)));
+
+    //     let yoption = {
+    //         ymin: ymin,
+    //         ymax: ymax,
+    //     }
+
+    //     this.ayctrl = new YAxisCtrl(this.svg, yoption);
+
+
+    //     // this.svg.select("#clip").select("rect")
+    //     //     .attr("width", this.width - (this.ayctrl.offset + 10))
+
+
+    //     let date = d3.max(data.map(r => r.Date));
+
+
+    //     let range = 30 * 1.5;
+
+    //     let xoption = {
+    //         startDate: date,
+    //         dmin: dateAdd(date, gObj.interval, range * -1),
+    //         drange: range * 1.25,
+    //         interval: gObj.interval,
+    //         offset: this.ayctrl.offset
+    //     }
+
+    //     this.axctrl = new XAxisCtrl(this.svg, xoption);
+
+    //     let cfoption = {
+    //         xScale: this.axctrl.xScale,
+    //         yScale: this.ayctrl.yScale,
+    //         offset: this.ayctrl.offset
+    //     }
+
+    //     this.cf = new CrossFire(this.svg, cfoption)
+
+    //     return {
+    //         xScale: this.axctrl.xScale,
+    //         yScale: this.ayctrl.yScale,
+    //         offset: this.ayctrl.offset,
+    //         data: data
+    //     };
+
+    // }    
 
     update(pos) {
         if (this.cf)

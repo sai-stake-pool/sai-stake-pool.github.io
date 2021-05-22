@@ -43,93 +43,113 @@
         <svg id="mainSvg" class="disableselect" width="640" height="480"></svg>
         <!-- style="background-color:rgb(252, 246, 246)"></svg> -->
     </div>
-    <div>
+    <!-- <div>
         <input id="console" type="text" value="sdfs" size="50" />
-    </div>
+    </div> -->
 
 
     <script>
+        function buildChart(svg, key) {
+            svg.selectAll("*").remove();
+            let um = new UpdateManager(svg);
+            let gc = new GridChart(svg);
+            let cc = new CandleChart(svg);
+
+
+            function handleMouseMove() {
+                let pos = d3.mouse(this)
+                um.update(pos);
+            }
+
+            function updateChart() {
+
+                var t = d3.event.transform;
+
+                var d3mouse = d3.mouse(this);
+                // recover the new scale
+                var newXScale = t.rescaleX(um.axctrl.xScale);
+                var newYScale = t.rescaleY(um.ayctrl.yScale);
+                let pos = d3mouse
+
+                gc.draw(newXScale, newYScale);
+
+                um.cf.rescaleDraw(newXScale, newYScale, pos);
+
+
+                // update axes with these new boundaries
+
+                um.axctrl.g.call(d3.axisBottom(newXScale));
+                um.ayctrl.g.call(d3.axisRight(newYScale));
+
+                cc.setK(d3.event.transform.k);
+                cc.refresh(newXScale, newYScale);
+
+            }
+
+            function cancelChart() {
+                cc.cancel();
+            }
+
+            var da = new DataFeed()
+            da.download("/api/v1/resources/ticker?granularity=" + (granularities[key].granularity * granularities[key].factor))
+                .then(data => {
+                    let option = um.initialize(data, granularities[key]);
+                    um.zoom.on("zoom", updateChart)
+                    .on("end", cancelChart);                    
+                    var p = new Promise((resolve, reject) => {
+                        resolve(option)
+                    })
+                    return p;
+                })
+                .then(option => {
+                    cc.update(option)
+                    gc.draw(option.xScale, option.yScale);
+                    svg.on("mousemove", handleMouseMove)
+                })
+        }
+
+
+
+        let granularities = {
+            "1m": {
+                interval: "minute",
+                granularity: 60,
+                factor: 1
+            },
+            "5m": {
+                interval: "minute",
+                granularity: 60,
+                factor: 5
+            },
+            "15m": {
+                interval: "minute",
+                granularity: 60,
+                factor: 15
+            },
+            "1h": {
+                interval: "hour",
+                granularity: 60,
+                factor: 60
+            },
+            "6h": {
+                interval: "hour",
+                granularity: 60,
+                factor: 360
+            },
+            "1d": {
+                interval: "hour",
+                granularity: 60,
+                factor: 1440
+            }
+        }
+
+        let key = "1m";
+
         let svg = d3.select("#mainSvg");
 
-        let um = new UpdateManager(svg);
-        let gc = new GridChart(svg);
-        let cc = new CandleChart(svg);
-
-        var deltaX, deltaY;
-
-        var startingX = 0;
-
-        // https://www.d3-graph-gallery.com/graph/interactivity_zoom.html#axisZoom
-
-        var da = new DataFeed()
-        da.download("/api/v1/resources/ticker")
-            .then(data => {
-                let option = um.initialize(data);
-                var p = new Promise((resolve, reject) => {
-                    resolve(option)
-                })
-                return p;
-
-            })
-            .then(option => {
-                cc.update(option)
-                gc.draw(option.xScale, option.yScale);
-                svg.on("mousemove", handleMouseMove)
-            })
-
-        function handleMouseMove() {
-            let pos = d3.mouse(this)
-            // console.log(pos);
-            um.update(pos);
-
-            // let dateString = um.axctrl.xScale.invert(pos[0])
-            // var dateTime = moment(dateString).format("DD-MMM-YY HH:mm:ss");
-
-            // let price = um.cf.addZeroes(um.ayctrl.yScale.invert(pos[1]))
-
-            // document.getElementById("console").value = `${dateTime}:${price}`;
-        }
-
-        var gnewXScale;
-
-        var updateItems = [];
-
-        function updateChart() {
-
-            var t = d3.event.transform;
-            var d3mouse = d3.mouse(this);
-            // recover the new scale
-            var newXScale = t.rescaleX(um.axctrl.xScale);
-            var newYScale = t.rescaleY(um.ayctrl.yScale);
-            let pos = d3mouse
-            // console.log(pos);
-
-            gc.draw(newXScale, newYScale);
-
-            um.cf.rescaleDraw(newXScale, newYScale, pos);
+        buildChart(svg, key)
 
 
-            // update axes with these new boundaries
-
-            um.axctrl.g.call(d3.axisBottom(newXScale));
-            um.ayctrl.g.call(d3.axisRight(newYScale));
-
-            cc.setK(d3.event.transform.k);
-            cc.refresh(newXScale, newYScale);
-
-            // setTimeout(() => {
-            //   var xf = updateItems.pop();
-            //   xf(um.axctrl.xScale, um.ayctrl.yScale);
-            // }, 50);
-
-            // updateItems.pop(, )
-
-        }
-
-
-        function cancelChart() {
-            cc.cancel();
-        }
     </script>
 </body>
 
