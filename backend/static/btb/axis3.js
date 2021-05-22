@@ -54,6 +54,9 @@ class YAxisCtrl {
         this.width = this.svg.attr("width")
         this.height = this.svg.attr("height");
 
+        console.log(this.option.ymin);
+        console.log(this.option.ymax);
+
         this.yScale = d3.scaleLinear().domain([this.option.ymin, this.option.ymax]).range([this.height - 25, 0]).nice();
         this.yAxis = d3.axisRight()
             .scale(this.yScale)
@@ -95,7 +98,7 @@ class CrossFire {
         this.y1 = 0;
         this.y2 = 0;
 
-        this.option.axctrl.g.attr("transform")
+        // this.option.axctrl.g.attr("transform")
         // let trvalue = getTransformation(t)
 
         this.g = svg.append("g")
@@ -103,8 +106,8 @@ class CrossFire {
             // .attr("transform", "translate(" + trvalue.translateX + "," + 0 + ")")
             .attr("transform", "translate(0,0)")
             .style("pointer-events", "none")
-            // .attr("clip-path", "url(#clip)")
-            // .on("mousemove", this.handleMouseMove)
+        // .attr("clip-path", "url(#clip)")
+        // .on("mousemove", this.handleMouseMove)
 
 
         this.xline = this.g.append('line')
@@ -128,11 +131,15 @@ class CrossFire {
             .attr("y2", this.y2);
 
         this.dateMarker = this.g.append("g")
+            .style("pointer-events", "none")
 
-        let dateString = this.option.axctrl.xScale.invert(this.x1)
+        console.log(this.option.xScale.domain())
+
+        let dateString = this.option.xScale.invert(this.x1)
         var dateTime = moment.utc(dateString).format("DD-MMM-YY HH:mm:ss");
 
         let dateRect = this.dateMarker.append('rect')
+            .style("pointer-events", "none")
 
         let dateText = this.dateMarker.append("text")
             .attr("x", 0)
@@ -141,6 +148,7 @@ class CrossFire {
             .attr("font-family", "arial")
             // .attr("font-weight", "bold")
             .attr("fill", "blue")
+            .style("pointer-events", "none")
             .text(dateTime);
 
         let dateLen = dateText.node().getComputedTextLength()
@@ -159,7 +167,7 @@ class CrossFire {
 
         this.priceMarker = this.g.append("g");
 
-        let price = this.addZeroes(this.option.ayctrl.yScale.invert(this.y1))
+        let price = this.addZeroes(this.option.yScale.invert(this.y1))
 
         let priceRect = this.priceMarker.append('rect')
 
@@ -187,9 +195,65 @@ class CrossFire {
             .attr("transform", `translate(${this.width - (priceLen + 2)}, ${this.y1 - (20 / 2)} )`)
     }
 
-    rescale(xScale, yScale) {
-        this.option.axctrl.xScale = xScale;
-        this.option.ayctrl.yScale = yScale;
+    rescaleDraw(xScale, yScale, pos) {
+
+        this.xline
+            .attr("x1", pos[0])
+            .attr("y1", 0)
+            .attr("x2", pos[0])
+            .attr("y2", this.height);
+
+        this.yline
+            .attr("x1", 0)
+            .attr("y1", pos[1])
+            .attr("x2", (this.width - this.option.offset))
+            .attr("y2", pos[1]);
+
+
+
+
+
+        this.dateMarker.select("rect")
+            .attr("x", (pos[0]));
+
+        // get the date value
+        let dateString = xScale.invert(pos[0])
+        var dateTime = moment(dateString).format("DD-MMM-YY HH:mm:ss");
+
+
+        this.dateMarker.select("text")
+            .attr("x", pos[0])
+            .text(dateTime)
+
+
+        // get the price value
+        let price = this.addZeroes(yScale.invert(pos[1]))
+        // console.log(this.height - this.y1 - 25)
+
+        let priceText = this.priceMarker.select("text")
+            .text(price)
+
+        let priceLen = priceText.node().getComputedTextLength()
+
+
+        this.priceMarker.select("rect")
+            .attr("width", priceLen + 10);
+
+        this.priceMarker
+            .attr("transform", `translate(${this.width - (priceLen + 2)}, ${pos[1] - (20 / 2)} )`)
+
+
+        this.option.xScale = xScale;
+        this.option.yScale = yScale;
+
+
+
+
+
+
+
+
+
     }
 
     update(pos) {
@@ -211,14 +275,14 @@ class CrossFire {
         this.yline
             .attr("x1", 0)
             .attr("y1", this.y1)
-            .attr("x2", (this.width - this.option.ayctrl.offset))
+            .attr("x2", (this.width - this.option.offset))
             .attr("y2", this.y2);
 
         this.dateMarker.select("rect")
             .attr("x", (this.x1));
 
         // get the date value
-        let dateString = this.option.axctrl.xScale.invert(this.x1)
+        let dateString = this.option.xScale.invert(this.x1)
         var dateTime = moment(dateString).format("DD-MMM-YY HH:mm:ss");
 
 
@@ -228,7 +292,7 @@ class CrossFire {
 
 
         // get the price value
-        let price = this.addZeroes(this.option.ayctrl.yScale.invert(this.y1))
+        let price = this.addZeroes(this.option.yScale.invert(this.y1))
         // console.log(this.height - this.y1 - 25)
 
         let priceText = this.priceMarker.select("text")
@@ -242,6 +306,8 @@ class CrossFire {
 
         this.priceMarker
             .attr("transform", `translate(${this.width - (priceLen + 2)}, ${this.y1 - (20 / 2)} )`)
+
+
     }
 
     calc(num) {
@@ -275,7 +341,8 @@ class UpdateManager {
         this.zoom = d3.zoom()
             .scaleExtent([.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
             .extent([[0, 0], [this.width, this.height]])
-            .on("zoom", updateChart);
+            .on("zoom", updateChart)
+            .on("end", cancelChart);
 
         this.svg.append("rect")
             .attr("width", this.width)
@@ -290,8 +357,11 @@ class UpdateManager {
 
     initialize(data) {
 
+        console.log("data")
+        console.log(data)
 
-        var ydata = data.slice(250, 300);
+
+        var ydata = data; //.slice(250, 300);
 
         var ymin = d3.min(ydata.map(r => r.Low * .98));
         var ymax = d3.max(ydata.map(r => (r.High * 1.005)));
@@ -325,19 +395,17 @@ class UpdateManager {
         this.axctrl = new XAxisCtrl(this.svg, xoption);
 
         let cfoption = {
-            ayctrl: this.ayctrl,
-            axctrl: this.axctrl,
+            xScale: this.axctrl.xScale,
+            yScale: this.ayctrl.yScale,
+            offset: this.ayctrl.offset
         }
 
         this.cf = new CrossFire(this.svg, cfoption)
 
-
-
-
-
         return {
-            ayctrl: this.ayctrl,
-            axctrl: this.axctrl,
+            xScale: this.axctrl.xScale,
+            yScale: this.ayctrl.yScale,
+            offset: this.ayctrl.offset,
             data: data
         };
 
@@ -390,65 +458,84 @@ class CandleChart {
             .attr("class", "chartBody")
             .attr("clip-path", "url(#clip)")
 
+        this.timer = undefined;
+
+        this.k = 1;
+
+    }
+
+    setK(k) {
+        this.k = k;
     }
 
     update(option) {
         console.log(option.data)
-        this.g.selectAll(".stem")
+        this.stem = this.g.selectAll(".stem")
             .data(option.data)
             .enter()
             .append("line")
             .attr("class", "stem")
-            .attr("x1", (d, i) => option.axctrl.xScale(d.Date))
-            .attr("x2", (d, i) => option.axctrl.xScale(d.Date))
-            .attr("y1", d => option.ayctrl.yScale(d.High) + 15)
-            .attr("y2", d => option.ayctrl.yScale(d.Low) + 15)
+            .attr("x1", (d, i) => option.xScale(d.Date))
+            .attr("x2", (d, i) => option.xScale(d.Date))
+            .attr("y1", d => option.yScale(d.High) + 15)
+            .attr("y2", d => option.yScale(d.Low) + 15)
             .attr("stroke-width", ".5")
             .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
 
-        this.g.selectAll(".candle")
+        this.candle = this.g.selectAll(".candle")
             .data(option.data)
             .enter()
             .append("rect")
             .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
             .attr("stroke-width", ".25")
-            .attr('x', (d, i) => option.axctrl.xScale(d.Date) - 2)
+            .attr('x', (d, i) => option.xScale(d.Date) - ((5 * this.k) / 2))
             .attr("class", "candle")
-            .attr('y', d => option.ayctrl.yScale(Math.max(d.Open, d.Close)) + 15)
-            .attr('width', "5")
-            .attr('height', d => (d.Open === d.Close) ? 1 : option.ayctrl.yScale(Math.min(d.Open, d.Close)) - option.ayctrl.yScale(Math.max(d.Open, d.Close)))
+            .attr('y', d => option.yScale(Math.max(d.Open, d.Close)) + 15)
+            .attr('width', () => {
+                return 5 * this.k
+            })
+            .attr('height', d => (d.Open === d.Close) ? 1 : option.yScale(Math.min(d.Open, d.Close)) - option.yScale(Math.max(d.Open, d.Close)))
             .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
 
 
     }
 
-    refresh(xScale, yScale) {
-        this.svg.select(".chartBody")
-            .selectAll(".stem")
-            .attr("x1", (d, i) => xScale(d.Date))
-            .attr("x2", (d, i) => xScale(d.Date))
-            .attr("y1", d => yScale(d.High) + 15)
-            .attr("y2", d => yScale(d.Low) + 15)
-            .attr("stroke-width", ".5")
-            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+    cancel() {
+        // console.log("canceling chart drawing")
+        clearTimeout(this.timer);
+    }
 
-        this.svg.select(".chartBody")
-            .selectAll(".candle")
-            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
-            .attr("stroke-width", ".25")
-            .attr('x', (d, i) => {
-                var x = xScale(d.Date) - 2;
-                console.log(x)
-                if (xScale(d) > xScale.range[1]) {
-                    x = x * -1;
-                }
-                return x
-            })
-            .attr("class", "candle")
-            .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
-            .attr('width', "5")
-            .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
-            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+    refresh(xScale, yScale) {
+
+        this.timer = setTimeout(() => {
+            this.stem
+                .attr("x1", (d, i) => xScale(d.Date))
+                .attr("x2", (d, i) => xScale(d.Date))
+                .attr("y1", d => yScale(d.High) + 15)
+                .attr("y2", d => yScale(d.Low) + 15)
+                .attr("stroke-width", ".5")
+                .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+
+            this.candle
+                .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+                .attr("stroke-width", ".25")
+                .attr('x', (d, i) => {
+                    var x = xScale(d.Date) - ((5 * this.k) / 2);
+                    if (xScale(d) > xScale.range[1]) {
+                        x = x * -1;
+                    }
+                    return x
+                })
+                .attr("class", "candle")
+                .attr('y', d => yScale(Math.max(d.Open, d.Close)) + 15)
+                .attr('width', () => {
+                    return 5 * this.k
+                })
+                .attr('height', d => (d.Open === d.Close) ? 1 : yScale(Math.min(d.Open, d.Close)) - yScale(Math.max(d.Open, d.Close)))
+                .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
+        }, 50);
+
+
     }
 
     // xyUpdate(e) {
@@ -463,6 +550,22 @@ class CandleChart {
 }
 
 
+
+class GridChart {
+    constructor(svg) {
+        this.width = +this.svg.attr("width")
+        this.height = +this.svg.attr("height");
+
+        this.g = this.svg.append("g")
+            .attr("class", "gridBody")
+            .attr("clip-path", "url(#clip)")
+    }
+
+    draw(xScale, yScale) {
+        this.g.data(xScale.ticks())
+        this.g.selectAll("line")
+    }
+}
 
 
 

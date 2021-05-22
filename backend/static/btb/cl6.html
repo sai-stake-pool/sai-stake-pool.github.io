@@ -6,7 +6,7 @@
         integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
         crossorigin="anonymous"></script>
     <script src="util.js"></script>
-    <script src="axis3.js?id=1234234"></script>
+    <script src="axis4.js?id=1234234"></script>
     <script src="dataAdapter.js"></script>
     <style>
         /* Disables the selection */
@@ -73,8 +73,8 @@
             })
             .then(option => {
                 cc.update(option)
+                gc.draw(option.xScale, option.yScale);
                 svg.on("mousemove", handleMouseMove)
-
             })
 
         function handleMouseMove() {
@@ -104,7 +104,7 @@
             let pos = d3mouse
             // console.log(pos);
 
-
+            gc.draw(newXScale, newYScale);
 
             um.cf.rescaleDraw(newXScale, newYScale, pos);
 
