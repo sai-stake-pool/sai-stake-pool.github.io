@@ -34,6 +34,20 @@ def req():
 @app.route('/api/v1/resources/ticker', methods=['GET'])
 def ticker():
     l=[]
+    # public_client = cbpro.PublicClient(api_url='https://api-public.sandbox.pro.coinbase.com', timeout=30)
+    # data = public_client.get_product_historic_rates('BTC-USD', granularity=60)
+    # l.append('Date,Open,High,Low,Close,Adj Close,Volume')
+    # items = [('%s,%s,%s,%s,%s,%s,%s' % (datetime.fromtimestamp(l[0]), l[3], l[2], l[1], l[4], l[4], l[5]) ) for l in data[::-1]]
+    # for i in items:
+    #     l.append(i)
+
+    # csv = ''.join(['%s\n' % x for x in l])
+    # response = make_response(csv)
+    # cd = 'attachment; filename=mycsv.csv'
+    # response.headers['Content-Disposition'] = cd 
+    # response.mimetype='text/csv'    
+    # return response
+
     # [60, 300, 900, 3600, 21600, 86400] 
 
     granularity=60
@@ -60,6 +74,9 @@ def ticker():
     return response
 
 print('starting')
+
+
+
 
 # app.run()
 app.run(host='0.0.0.0')

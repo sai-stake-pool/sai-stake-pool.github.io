@@ -7,20 +7,18 @@ class XAxisCtrl {
         this.height = +this.svg.attr("height");
         this.option = option;
 
+        // this.xScale = d3.scaleTime()
+        //     .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
+        //     .range([0, (this.width - (12 + this.option.offset))])
+
+
         this.xScale = d3.scaleTime()
-            .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
+            .domain([this.option.dmin, this.option.dmax])
             .range([0, (this.width - (12 + this.option.offset))])
 
         this.universalXScale = d3.scaleTime()
             .domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
             .range([0, (this.width - (12 + this.option.offset))])
-
-
-        console.log("date marker point " + this.universalXScale(this.option.startDate))
-
-        // this.xScaleReverse = d3.scaleTime()
-        //     .domain([0, this.width + 10])
-        //     .range([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
 
         this.g = this.svg.append("g")
             .attr("class", "axis x-axis")
@@ -30,21 +28,29 @@ class XAxisCtrl {
 
     }
 
-    // update(option) {
-    //     this.option = option;
-    //     this.xScale.domain([this.option.dmin, dateAdd(this.option.dmin, this.option.interval, this.option.drange)])
-    //         .range([0, (this.width - (12 + this.option.offset))])
+    resize(width) {
+        this.width = width;
+        // get the date of the width
+        let d = this.xScale.invert((this.width - (12 + this.option.offset)));
+        // console.log(d);
+        this.xScale
+            .domain([this.option.dmin, d])
+            .range([0, (this.width - (12 + this.option.offset))])
 
-    //     let svgTransition = this.svg.transition();
+        this.g.call(d3.axisBottom(this.xScale))
 
-    //     svgTransition.select(".x-axis")
-    //         .duration(0)
-    //         .call(d3.axisBottom(this.xScale))
+        return this.xScale;
 
+    }
 
-    // }
+    reinitialize(dmin, dmax) {
+        this.xScale = d3.scaleTime()
+            .domain([dmin, dmax])
+            .range([0, (this.width - (12 + this.option.offset))])
 
-
+        this.g
+            .call(d3.axisBottom(this.xScale))
+    }
 }
 
 class YAxisCtrl {
@@ -54,8 +60,8 @@ class YAxisCtrl {
         this.width = svg.node().clientWidth //this.svg.attr("width")
         this.height = this.svg.attr("height");
 
-        console.log(this.option.ymin);
-        console.log(this.option.ymax);
+        // console.log(this.option.ymin);
+        // console.log(this.option.ymax);
 
         this.yScale = d3.scaleLinear().domain([this.option.ymin, this.option.ymax]).range([this.height - 25, 0]).nice();
         this.yAxis = d3.axisRight()
@@ -75,12 +81,30 @@ class YAxisCtrl {
             return Math.max(a, b);
         });
 
-        // console.log(max);
+
         this.offset = max;
         this.g
-            .attr("transform", "translate(" + (this.width - (max + 10)) + "," + (0) + ")")
+            .attr("transform", "translate(" + (this.width - (this.offset + 10)) + "," + (0) + ")")
 
 
+    }
+
+    resize(width) {
+        this.width = width;
+        // coreChart.um.ayctrl.g.attr("transform","translate(927.6420288085938,0)")      
+        this.g
+            .attr("transform", "translate(" + (this.width - (this.offset + 10)) + "," + (0) + ")")
+
+        return this.yScale;
+    }
+
+    reinitialize(ymin, ymax) {
+        this.yScale = d3.scaleLinear().domain([ymin, ymax]).range([this.height - 25, 0]).nice();
+        this.yAxis = d3.axisRight()
+            .scale(this.yScale)
+
+        this.g
+            .call(this.yAxis);
     }
 }
 
@@ -98,16 +122,11 @@ class CrossFire {
         this.y1 = 0;
         this.y2 = 0;
 
-        // this.option.axctrl.g.attr("transform")
-        // let trvalue = getTransformation(t)
-
         this.g = svg.append("g")
             .attr("class", "crossFireBody")
-            // .attr("transform", "translate(" + trvalue.translateX + "," + 0 + ")")
             .attr("transform", "translate(0,0)")
             .style("pointer-events", "none")
-        // .attr("clip-path", "url(#clip)")
-        // .on("mousemove", this.handleMouseMove)
+
 
 
         this.xline = this.g.append('line')
@@ -133,7 +152,7 @@ class CrossFire {
         this.dateMarker = this.g.append("g")
             .style("pointer-events", "none")
 
-        console.log(this.option.xScale.domain())
+        // console.log(this.option.xScale.domain())
 
         let dateString = this.option.xScale.invert(this.x1)
         var dateTime = moment.utc(dateString).format("DD-MMM-YY HH:mm:ss");
@@ -146,7 +165,6 @@ class CrossFire {
             .attr("y", 15)
             .attr("font-size", "12")
             .attr("font-family", "arial")
-            // .attr("font-weight", "bold")
             .attr("fill", "blue")
             .style("pointer-events", "none")
             .text(dateTime);
@@ -172,8 +190,6 @@ class CrossFire {
         let priceRect = this.priceMarker.append('rect')
 
         let priceText = this.priceMarker.append("text")
-            // .attr("x", this.x1)
-            // .attr("y", (this.y1))
             .attr("y", (20 / 2) + 5)
             .attr("font-size", "12")
             .attr("font-family", "arial")
@@ -193,6 +209,10 @@ class CrossFire {
 
         this.priceMarker
             .attr("transform", `translate(${this.width - (priceLen + 2)}, ${this.y1 - (20 / 2)} )`)
+    }
+
+    reinitialize() {
+
     }
 
     rescaleDraw(xScale, yScale, pos) {
@@ -324,23 +344,11 @@ class CrossFire {
 class UpdateManager {
     constructor(svg) {
         this.svg = svg;
-        this.width = svg.node().clientWidth //+svg.attr("width")
-        this.height = +svg.attr("height")
-        this.updateList = [];
-        this.cancelList = [];
-        this.onUpdate = ()=>{
-            this.updateList.forEach(f => {
-                f();
-            })
-        };
-        this.onCancel = ()=>{
-            this.cancelList.forEach(f => {
-                f();
-            })
-        }
+        this.width = +parseInt(this.svg.node().getClientRects()[0].width) //+svg.attr("width")
+        this.height = svg.node().clientHeight
 
         // Add a clipPath: everything out of this area won't be drawn.
-        this.svg.append("defs").append("SVG:clipPath")
+        this.clip = this.svg.append("defs").append("SVG:clipPath")
             .attr("id", "clip")
             .append("SVG:rect")
             .attr("width", this.width)
@@ -353,9 +361,9 @@ class UpdateManager {
         this.zoom = d3.zoom()
             .scaleExtent([.5, 20])  // This control how much you can unzoom (x0.5) and zoom (x20)
             .extent([[0, 0], [this.width, this.height]])
- 
 
-        this.svg.append("rect")
+
+        this.pointerRect = this.svg.append("rect")
             .attr("width", this.width)
             .attr("height", this.height)
             .style("fill", "none")
@@ -368,15 +376,18 @@ class UpdateManager {
 
 
     initialize(data, gObj) {
+        // console.log("data")
+        // console.log(data)
 
-        console.log("data")
-        console.log(data)
+        let candlesLength = this.width * (.75 * 1 / 10)
+        let minIndex = data.length - candlesLength
 
+        let vcandles = data.slice(parseInt(minIndex), data.length)
 
-        var ydata = data; //.slice(250, 300);
+        var ydata = vcandles; //.slice(250, 300);
 
-        var ymin = d3.min(ydata.map(r => r.Low * .995));
-        var ymax = d3.max(ydata.map(r => (r.High * .945)));
+        var ymin = d3.min(ydata.map(r => r.Low * .97));
+        var ymax = d3.max(ydata.map(r => (r.High * 1.005)));
 
         let yoption = {
             ymin: ymin,
@@ -386,22 +397,31 @@ class UpdateManager {
         this.ayctrl = new YAxisCtrl(this.svg, yoption);
 
 
-        this.svg.select("#clip").select("rect")
+        this.clip
             .attr("width", this.width - (this.ayctrl.offset + 10))
 
+        this.pointerRect
+            .attr("width", this.width - (this.ayctrl.offset + 10))
 
         let date = d3.max(data.map(r => r.Date));
 
 
-        let range = 30 * 1.5;
+        let range = candlesLength;
+
+        let dmin = vcandles[0].Date
+        let dmax = dateAdd(vcandles[vcandles.length - 1].Date, gObj.interval, 5)
 
         let xoption = {
             startDate: date,
-            dmin: dateAdd(date, gObj.interval, range * -1),
+            dmin: dmin,
+            dmax: dmax,
             drange: range * 1.25,
             interval: gObj.interval,
             offset: this.ayctrl.offset
         }
+
+        console.log(xoption)
+
 
         this.axctrl = new XAxisCtrl(this.svg, xoption);
 
@@ -422,82 +442,61 @@ class UpdateManager {
 
     }
 
-    // reinitialize(data, gObj) {
-    //     var ydata = data; //.slice(250, 300);
 
-    //     var ymin = d3.min(ydata.map(r => r.Low * .98));
-    //     var ymax = d3.max(ydata.map(r => (r.High * 1.005)));
+    reinitialize(data, interval) {
+        // extracte visible candles
 
-    //     let yoption = {
-    //         ymin: ymin,
-    //         ymax: ymax,
-    //     }
+        let candlesLength = this.width * (.75 * 1 / 10)
+        let minIndex = data.length - candlesLength
 
-    //     this.ayctrl = new YAxisCtrl(this.svg, yoption);
+        let vcandles = data.slice(parseInt(minIndex), data.length)
+        // console.log(vcandles);
+
+        // do y
+        var ydata = vcandles;
+        var ymin = d3.min(ydata.map(r => r.Low * .97));
+        var ymax = d3.max(ydata.map(r => (r.High * 1.005)));
+        this.ayctrl.reinitialize(ymin, ymax);
+
+        // do x
+        let dmin = vcandles[0].Date
+        let dmax = dateAdd(vcandles[vcandles.length - 1].Date, interval, 5)
+        console.log(`this width : ${this.width}, interval : ${interval}, minIndex : ${minIndex}, dmin : ${dmin}, dmax : ${dmax}`)
+        this.axctrl.reinitialize(dmin, dmax);
+
+        // do cross fire
+        // since nothing changed no need to reinitialize
+        return {
+            xScale: this.axctrl.xScale,
+            yScale: this.ayctrl.yScale,
+            offset: this.ayctrl.offset,
+            data: data
+        };
+    }
 
 
-    //     // this.svg.select("#clip").select("rect")
-    //     //     .attr("width", this.width - (this.ayctrl.offset + 10))
+    resize(width, height) {
+        this.width = width;
+        let yScale = this.ayctrl.resize(width);
+        let xScale = this.axctrl.resize(width);
 
+        this.clip
+            .attr("width", this.width - (this.ayctrl.offset + 10))
 
-    //     let date = d3.max(data.map(r => r.Date));
-
-
-    //     let range = 30 * 1.5;
-
-    //     let xoption = {
-    //         startDate: date,
-    //         dmin: dateAdd(date, gObj.interval, range * -1),
-    //         drange: range * 1.25,
-    //         interval: gObj.interval,
-    //         offset: this.ayctrl.offset
-    //     }
-
-    //     this.axctrl = new XAxisCtrl(this.svg, xoption);
-
-    //     let cfoption = {
-    //         xScale: this.axctrl.xScale,
-    //         yScale: this.ayctrl.yScale,
-    //         offset: this.ayctrl.offset
-    //     }
-
-    //     this.cf = new CrossFire(this.svg, cfoption)
-
-    //     return {
-    //         xScale: this.axctrl.xScale,
-    //         yScale: this.ayctrl.yScale,
-    //         offset: this.ayctrl.offset,
-    //         data: data
-    //     };
-
-    // }    
+        this.pointerRect
+            .attr("width", this.width - (this.ayctrl.offset + 10))
+        return {
+            xScale: xScale,
+            yScale: yScale
+        }
+    }
 
     update(pos) {
         if (this.cf)
             this.cf.update(pos);
     }
 
-    drag(v) {
-        let x = +svg.attr("x");
-        console.log(`move to -> ${x}`)
-        if (this.axctrl) {
-            let xdate = this.axctrl.universalXScale.invert(x);
-            console.log(`new date : ${xdate}`)
 
-            let xoption = {
-                dmin: xdate,
-                drange: 60 * 1.5,
-                interval: "minute",
-                offset: this.ayctrl.offset
-            }
-
-
-
-            // if(this.callback)
-            //     this.callback(this.axctrl.xScale, this.ayctrl.yScale);
-
-        }
-    }
 
     subscribe(callback) {
         this.callback = callback;
@@ -510,8 +509,7 @@ class UpdateManager {
 class CandleChart {
     constructor(svg) {
         this.svg = svg;
-        // this.svg.node().addEventListener('xyUpdate', this.xyUpdate);
-        svg.node().clientWidth //+this.svg.attr("width")
+        this.width = +parseInt(this.svg.node().getClientRects()[0].width) //+this.svg.attr("width")
         this.height = +this.svg.attr("height");
 
 
@@ -525,14 +523,23 @@ class CandleChart {
 
     }
 
+    reinitialize() {
+
+    }
+
     setK(k) {
         this.k = k;
     }
 
     update(option) {
-        console.log(option.data)
+        // console.log(option.data)
         this.stem = this.g.selectAll(".stem")
             .data(option.data)
+
+        this.stem.exit()
+            .remove()
+
+        this.stem
             .enter()
             .append("line")
             .attr("class", "stem")
@@ -543,8 +550,21 @@ class CandleChart {
             .attr("stroke-width", ".5")
             .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
 
+        this.stem
+            .attr("x1", (d, i) => option.xScale(d.Date))
+            .attr("x2", (d, i) => option.xScale(d.Date))
+            .attr("y1", d => option.yScale(d.High) + 15)
+            .attr("y2", d => option.yScale(d.Low) + 15)
+            .attr("stroke-width", ".5")
+            .attr("stroke", d => (d.Open === d.Close) ? "darkgrey" : (d.Open > d.Close) ? "darkred" : "darkgreen");
+
         this.candle = this.g.selectAll(".candle")
             .data(option.data)
+        this.candle
+            .exit()
+            .remove()
+
+        this.candle
             .enter()
             .append("rect")
             .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
@@ -558,6 +578,26 @@ class CandleChart {
             .attr('height', d => (d.Open === d.Close) ? 1 : option.yScale(Math.min(d.Open, d.Close)) - option.yScale(Math.max(d.Open, d.Close)))
             .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
 
+
+
+
+        this.candle
+            .attr("stroke", d => (d.Open === d.Close) ? "white" : (d.Open > d.Close) ? "darkred" : "darkgreen")
+            .attr("stroke-width", ".25")
+            .attr('x', (d, i) => {
+                var x = option.xScale(d.Date) - ((5 * this.k) / 2);
+                if (option.xScale(d) > option.xScale.range[1]) {
+                    x = x * -1;
+                }
+                return x
+            })
+            .attr("class", "candle")
+            .attr('y', d => option.yScale(Math.max(d.Open, d.Close)) + 15)
+            .attr('width', () => {
+                return 5 * this.k
+            })
+            .attr('height', d => (d.Open === d.Close) ? 1 : option.yScale(Math.min(d.Open, d.Close)) - option.yScale(Math.max(d.Open, d.Close)))
+            .attr("fill", d => (d.Open === d.Close) ? "silver" : (d.Open > d.Close) ? "red" : "green")
 
     }
 
@@ -615,7 +655,10 @@ class CandleChart {
 class GridChart {
     constructor(svg, xScale, yScale) {
         this.svg = svg;
-        this.width = svg.node().clientWidth //+this.svg.attr("width")
+        this.xScale = xScale;
+        this.yScale = yScale;
+
+        this.width = +parseInt(this.svg.node().getClientRects()[0].width) //+this.svg.attr("width")
         this.height = +this.svg.attr("height");
 
         this.g = this.svg.append("g")
@@ -624,13 +667,21 @@ class GridChart {
     }
 
     draw(xScale, yScale) {
+
+        this.xScale = xScale;
+        this.yScale = yScale;
+
+        this.updateLines();
+    }
+
+    updateLines() {
         var xlines = this.g.selectAll(".xlines")
-            .data(xScale.ticks())
+            .data(this.xScale.ticks())
         xlines.exit().remove();
         xlines
-            .attr("x1", d => xScale(d))
+            .attr("x1", d => this.xScale(d))
             .attr("y1", 0)
-            .attr("x2", d => xScale(d))
+            .attr("x2", d => this.xScale(d))
             .attr("y2", this.height);
 
         xlines
@@ -641,36 +692,40 @@ class GridChart {
             .attr("class", "xlines")
             // .style("stroke-dasharray", ("3, 3"))
             // .attr("class", "xline")
-            .attr("x1", d => xScale(d))
+            .attr("x1", d => this.xScale(d))
             .attr("y1", 0)
-            .attr("x2", d => xScale(d))
+            .attr("x2", d => this.xScale(d))
             .attr("y2", this.height);
 
 
         var ylines = this.g.selectAll(".ylines")
-            .data(yScale.ticks())
+            .data(this.yScale.ticks())
         ylines.exit().remove();
         ylines
             .attr("x1", 0)
-            .attr("y1", d => yScale(d))
+            .attr("y1", d => this.yScale(d))
             .attr("x2", this.width)
-            .attr("y2", d => yScale(d));
+            .attr("y2", d => this.yScale(d));
 
         ylines
             .enter()
             .append("line")
             .style("stroke", "lightgrey")
             .style("stroke-width", .5)
-            .attr("class", "ylines")            
+            .attr("class", "ylines")
             .attr("x1", 0)
-            .attr("y1", d => yScale(d))
+            .attr("y1", d => this.yScale(d))
             .attr("x2", this.width)
-            .attr("y2", d => yScale(d));
+            .attr("y2", d => this.yScale(d));
+    }
 
-
-
-
-
+    resize(width, xyScale) {
+        console.log(`this width : ${this.width}, newwidth : ${width}`)
+        if (this.width != width) {
+            this.width = width;
+            this.xScale = xyScale.xScale;
+            this.updateLines();
+        }
     }
 }
 
@@ -708,6 +763,3 @@ function getTransformation(transform) {
         scaleY: scaleY
     };
 }
-
-//   console.log(getTransformation("translate(20,30)"));  
-//   console.log(getTransformation("rotate(45) skewX(20) translate(20,30) translate(-5,40)"));
