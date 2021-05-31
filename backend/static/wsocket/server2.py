@@ -8,7 +8,8 @@ import cbpro
 cache = []
 class MyWebsocketClient(cbpro.WebsocketClient):
     def on_open(self):
-        self.url = "wss://ws-feed-public.sandbox.pro.coinbase.com"
+        # self.url = "wss://ws-feed-public.sandbox.pro.coinbase.com"
+        self.url = "wss://ws-feed.pro.coinbase.com"        
         self.products = ["BTC-USD"]
         self.message_count = 0
         self.channels = ["ticker"]
@@ -19,7 +20,10 @@ class MyWebsocketClient(cbpro.WebsocketClient):
         self.message_count += 1
         if 'price' in msg and 'type' in msg:
             print ("Message type:", msg["type"],
-                "\t@ {:.3f}".format(float(msg["price"])))
+                "\t@ {:.3f}".format(float(msg["price"])),
+                "\t@ {}".format(msg["side"]),
+                "\t@ {}".format(msg["last_size"])
+                )
             
             cache.append({
                 "price" : msg["price"],

@@ -13,6 +13,7 @@
             alert("im open")
         }
         ws.onmessage = function (event) {
+            console.log(event)
             var messages = document.getElementsByTagName('ul')[0],
                 message = document.createElement('li'),
                 content = document.createTextNode(JSON.stringify(event.data));

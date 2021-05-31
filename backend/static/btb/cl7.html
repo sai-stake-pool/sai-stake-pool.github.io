@@ -47,22 +47,24 @@
 </head>
 
 <body>
-    <select id="selectInterval" clasid="selectInterval" s="form-select" aria-label="Default select example"
-        style="width: 50%">
-        <option selected value="1m">1 minute</option>
-        <option value="5m">5 minute</option>
-        <option value="15m">15 minutes</option>
-        <option value="1h">1 hour</option>
-        <option value="6h">6 hours</option>
-        <option value="1d">1 day</option>
-    </select>
     <div id="svgContainer" style="margin: 5px;">
-        <svg id="mainSvg" class="disableselect" width="100%" height="480">
-            <!-- </svg>  style="background-color:rgb(252, 246, 246)" -->
+        <div class="row">
 
-        </svg>
-        </svg>
+            <select id="selectInterval" clasid="selectInterval" s="form-select" aria-label="Default select example">
+                <option selected value="1m">1 minute</option>
+                <option value="5m">5 minute</option>
+                <option value="15m">15 minutes</option>
+                <option value="1h">1 hour</option>
+                <option value="6h">6 hours</option>
+                <option value="1d">1 day</option>
+            </select>
 
+        </div>
+
+        <svg id="mainSvg" class="disableselect" width="100%" height="480"></svg>
+
+        <select id="selectProducts" clasid="selectInterval" s="form-select" aria-label="Default select example">
+        </select>
     </div>
     <!-- <div>
         <input id="console" type="text" value="sdfs" size="50" />
@@ -70,13 +72,20 @@
 
 
     <script>
-var da = new DataFeed()
+        let key = "1m";
+        let product = "BTC-USD"
+        let svg = d3.select("#mainSvg");
+
+        var da = new DataFeed()
+
+
+
         $("#selectInterval").on("change", function (value) {
             var This = $(this);
             var selectedD = $(this).val();
             console.log(selectedD);
 
-            
+
             key = selectedD
 
 
@@ -91,6 +100,42 @@ var da = new DataFeed()
 
 
         });
+
+        let products = ['LINK-USD',
+            'BTC-USD',
+            'BTC-GBP',
+            'BTC-EUR',
+            'BAT-USDC',
+            'ETH-BTC',
+            'LINK-USDC']
+
+
+        d3.select("#selectProducts").selectAll("option")
+            .data(products)
+            .enter()
+            .append("option")
+            .attr("value", d => d)
+            .text(d => d)
+
+        d3.select("#selectProducts").select("option")
+        .property("selected", true)
+
+        $("#selectProducts").on("change", function (value) {
+            var This = $(this);
+            var productId = $(this).val();
+
+            product = productId
+
+
+            da.download("/api/v1/resources/ticker?granularity=" + (granularities[key].granularity * granularities[key].factor) + "&product=" + product)
+                .then(data => {
+                    let option = coreChart.um.reinitialize(data, granularities[key].interval);
+                    return Promise.resolve(option);
+                })
+                .then(option => {
+                    coreChart.cc.update(option)
+                })
+        });        
 
 
         let granularities = {
@@ -126,8 +171,7 @@ var da = new DataFeed()
             }
         }
 
-        let key = "1m";
-        let svg = d3.select("#mainSvg");
+
         let coreChart = new CoreChart(svg, key, granularities)
     </script>
 </body>

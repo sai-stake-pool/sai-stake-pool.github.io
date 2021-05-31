@@ -44,9 +44,17 @@ def ticker():
 
     print(granularity)
 
+    product='BTC-USD'
+
+    productStr = request.args.get('product')
+    if productStr is not None:
+        product = productStr  
+
+    print(product)
+
     public_client = cbpro.PublicClient(api_url='https://api-public.sandbox.pro.coinbase.com', timeout=30)
 
-    data = public_client.get_product_historic_rates('BTC-USD', granularity=granularity)
+    data = public_client.get_product_historic_rates(product, granularity=granularity)
     l.append('Date,Open,High,Low,Close,Volume')
     items = [('%s,%s,%s,%s,%s,%s' % (datetime.fromtimestamp(l[0]), l[3], l[2], l[1], l[4], l[5]) ) for l in data[::-1]]
     for i in items[-150:]:
