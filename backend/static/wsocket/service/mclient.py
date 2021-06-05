@@ -14,4 +14,3 @@ wsClient = cbpro.WebsocketClient(url="wss://ws-feed.pro.coinbase.com", products=
     channels=["ticker"], mongo_collection=BTC_collection)
 
 wsClient.start()
-
