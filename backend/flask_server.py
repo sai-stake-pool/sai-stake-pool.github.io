@@ -52,7 +52,8 @@ def ticker():
 
     print(product)
 
-    public_client = cbpro.PublicClient(api_url='https://api-public.sandbox.pro.coinbase.com', timeout=30)
+    # public_client = cbpro.PublicClient(api_url='https://api-public.sandbox.pro.coinbase.com', timeout=30)
+    public_client = cbpro.PublicClient(timeout=30)
 
     data = public_client.get_product_historic_rates(product, granularity=granularity)
     l.append('Date,Open,High,Low,Close,Volume')
