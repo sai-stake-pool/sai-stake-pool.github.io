@@ -14,7 +14,7 @@ import dateutil.parser
 
 cache = []
 
-mongo_client = MongoClient('mongodb://192.168.0.3:27017/')
+mongo_client = MongoClient('mongodb://localhost:27017/')
 db = mongo_client.cryptocurrency_database
 # BTC_collection = db.BTC_collection
 ACC_collection = db.ACC_collection 
@@ -82,7 +82,7 @@ class MyWebsocketClient(cbpro.WebsocketClient):
                 "time" : msg["time"],
                 "side" : msg["side"]
             })
-        if len(cache) > 100:
+        if len(cache) > 100000:
             cache.pop(-1)
 
     def on_close(self):
