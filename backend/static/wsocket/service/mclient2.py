@@ -69,6 +69,7 @@ def task(event, timeout):
         wsClient.start()
     else:
         print("Time out, moving ahead without event...")
+        wsClient.start()
 
 wsClient.on_interrupted(task)
 wsClient.start()

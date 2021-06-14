@@ -21,4 +21,4 @@ if __name__ == '__main__':
   time.sleep(5)
   # generating the event
   e.set()
-  print("Event is set.")
+  print("Event is set.")    
