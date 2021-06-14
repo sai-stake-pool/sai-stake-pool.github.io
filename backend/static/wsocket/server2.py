@@ -6,35 +6,7 @@ import json
 import cbpro
 
 cache = []
-class MyWebsocketClient(cbpro.WebsocketClient):
-    def on_open(self):
-        # self.url = "wss://ws-feed-public.sandbox.pro.coinbase.com"
-        self.url = "wss://ws-feed.pro.coinbase.com"        
-        self.products = ["BTC-USD"]
-        self.message_count = 0
-        self.channels = ["ticker"]
-        print("Lets count the messages!")
 
-    def on_message(self, msg):
-        # print(msg)
-        self.message_count += 1
-        if 'price' in msg and 'type' in msg:
-            print ("Message type:", msg["type"],
-                "\t@ {:.3f}".format(float(msg["price"])),
-                "\t@ {}".format(msg["side"]),
-                "\t@ {}".format(msg["last_size"])
-                )
-            
-            cache.append({
-                "price" : msg["price"],
-                "time" : msg["time"],
-                "side" : msg["side"]
-            })
-        if len(cache) > 100:
-            cache.pop(-1)
-
-    def on_close(self):
-        print("-- Goodbye! --")
 
 wsClient = MyWebsocketClient()
 wsClient.start()  
